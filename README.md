@@ -113,17 +113,18 @@ marca y un bloque con menos de dos precios no se marca: un solo resultado no es 
 Las seis marcas viajan dentro del binario, en un sprite inline: la página no pide ninguna
 imagen. Cada una sale de un vector público, se reproduce sin recolorear, recortar ni deformar,
 y se usa solo para identificar la cadena que se compara. La caja es la misma para las seis
-(100 x 30 px) para que la columna se lea como una familia: la altura óptica se ajusta marca a
-marca y el ancho nunca se fuerza. CARREFOUR va con su símbolo solo, porque el logotipo completo
-se vuelve ilegible a esa altura.
+(106 x 30 px) para que la columna se lea como una familia: la altura óptica se ajusta marca a
+marca y el ancho nunca se fuerza. La caja premia la versión horizontal de cada marca —la palabra
+de ALDI con su subrayado, el lockup de CARREFOUR, la palabra de LIDL— porque a esta altura un
+bloque cuadrado se lee como un icono y no como una marca.
 
 | Cadena | Origen del vector | Licencia del archivo |
 |---|---|---|
 | ALCAMPO | `File:Logo Alcampo.svg`, Wikipedia en francés | marca registrada (uso nominativo) |
-| ALDI | `File:AldiWorldwideLogo.svg`, Wikimedia Commons | dominio público |
-| CARREFOUR | `File:Carrefour Groupe.svg`, Wikipedia en inglés | dominio público |
+| ALDI | `File:Aldi Logo on the outside of shops.svg`, Wikimedia Commons | dominio público |
+| CARREFOUR | lockup oficial 2024, espejo público en worldvectorlogo | marca registrada (uso nominativo) |
 | DIA | `File:Dia 2019.svg`, Wikimedia Commons | dominio público |
-| LIDL | `File:Lidl-Logo.svg`, Wikimedia Commons | dominio público |
+| LIDL | `File:Lidl-Logo.svg`, Wikimedia Commons (el mismo que sirve lidl.es) | dominio público |
 | MAS | `logo.svg` de supermercadosmas.com | marca registrada (uso nominativo) |
 
 ## Relevancia y vocabulario

@@ -42,7 +42,7 @@ const ICON = {
 // chain's accessible name wherever it replaces the word: role="img" plus aria-label.
 // It carries its own chip, so it reads on the light cards and on the dark recommendation.
 function logo(store, extra) {
-  return `<svg class="logo${extra ? " " + extra : ""}" viewBox="0 0 100 30" role="img" aria-label="${esc(nameOf(store))}" focusable="false"><use href="#logo-${esc(store)}"></use></svg>`;
+  return `<svg class="logo${extra ? " " + extra : ""}" viewBox="0 0 106 30" role="img" aria-label="${esc(nameOf(store))}" focusable="false"><use href="#logo-${esc(store)}"></use></svg>`;
 }
 
 // A chain that did not answer keeps its reason in two words: the compact line under the

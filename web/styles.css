@@ -81,7 +81,7 @@ button{font:inherit;color:inherit}
 
 /* ---- brand marks: one <use> per chain, sized here, never a file ---- */
 .sprite{position:absolute;width:0;height:0;overflow:hidden}
-.logo{display:block;height:30px;width:100px;flex:none}
+.logo{display:block;height:30px;width:106px;flex:none}
 
 /* Each chain's own colour, used only as a structural rule (a 3px edge), never as a
    surface: the accent green stays the one colour that means "this is on". */
@@ -220,7 +220,7 @@ main{max-width:1160px;margin-inline:auto;padding:var(--sp-6) var(--sp-7) 0;flex:
    and the sentence starts on the card's left edge in all six cards. */
 .shop-body{display:contents}
 .shop-logo{grid-column:1;grid-row:1;display:block;padding-block-start:1px}
-.shop-logo .logo{height:30px;width:100px}
+.shop-logo .logo{height:30px;width:106px}
 .shop-check{grid-column:2;grid-row:1;justify-self:end;display:flex;align-items:center;gap:var(--sp-2);min-height:26px}
 .dist{grid-column:1/-1;grid-row:2;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-3)}
 .cap{grid-column:1/-1;grid-row:3;display:block;font-size:0.84375rem;color:var(--ink-2);line-height:1.5;min-height:3.1em}

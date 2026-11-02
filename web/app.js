@@ -309,6 +309,7 @@ function hitChain(r, term) {
   return li;
 }
 
+
 // Appends only what the block has not shown, then decides the control's fate: ask for more
 // only while the chain filled the page it was asked for and the cap still leaves room. A
 // chain that came up short, or reached the cap, gets a line instead of a dead button.
@@ -473,7 +474,8 @@ function chainSection(chain) {
   li.innerHTML = `
     <div class="bc-head">
       ${logo(store)}
-      <span class="bc-name">${esc(nameOf(store))}</span>
+      <span class="bc-name sr">${esc(nameOf(store))}</span>
+      <span class="bc-count">${esc(countOf(lines.length))}</span>
       ${chain.stale && chain.stale.length ? `<span class="tag tag-warn">${ICON.warn}Sin confirmar</span>` : ""}
       <span class="bc-sub">${sub}</span>
     </div>

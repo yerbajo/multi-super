@@ -1,7 +1,12 @@
-/* Direction 03 «Tienda cercana», no framework and no external request: the postal code
-   and the store cards come first, then the search and the basket, one section per chain.
-   Everything the page knows about a chain comes from /api/caps or from the documents the
-   server returns; nothing here invents a store, a zone or a price.
+/* Direction 03 «Tienda cercana», no framework and no external request: the supermarket cards
+   come first and they are the search selector, then the search and the basket, one section
+   per chain. Everything the page knows about a chain comes from /api/caps or from the
+   documents the server returns; nothing here invents a store, a zone or a price.
+
+   S17: there is no postal code step. What the shopper picks is which chains get searched: a
+   chain left unchecked is never asked, so it costs no request and never appears in a result
+   or in a count. A chain whose API cannot search cannot be checked at all, and its card says
+   why.
 
    S15: a product the shopper adds belongs to the basket of the chain it was added in, and
    to no other. Every entry this page sends is pinned to its chain, and each section holds
@@ -12,18 +17,6 @@
 const CHAIN_NAMES = {
   alcampo: "ALCAMPO", aldi: "ALDI", carrefour: "CARREFOUR",
   dia: "DIA", lidl: "LIDL", mas: "MAS",
-};
-// A store selector appears only where T29 found a store a human can actually choose.
-// ALDI, ALCAMPO and CARREFOUR have none, and the card says why — that is the point of
-// this direction and it is also S11: a chain that cannot fix a store must say so.
-const PICKABLE = new Set(["dia", "mas", "lidl"]);
-const STORE_HINT = {
-  dia: "Almacén de tu zona · ejemplo",
-  mas: "Punto de recogida · ejemplo",
-  lidl: "Tienda física · ejemplo",
-  aldi: "Sin tienda: el catálogo va por región",
-  alcampo: "Compra online: el código postal se pide en su web",
-  carrefour: "Precios de un comparador externo",
 };
 // The chip is a function of the zone mode alone, so a card says the mode once instead of
 // writing it again in prose. One mode, one chip, four different texts.
@@ -62,9 +55,8 @@ const SOFT_ERROR = new Set(["quota", "parse"]);
 
 
 const state = {
-  cp: "",
   caps: null,
-  chosen: { dia: true, mas: true, lidl: true },
+  off: new Set(),     // chains the shopper unchecked, by store
   lines: [],          // [{key, store, id, name, quantity}]: one product in one chain
   basket: null,
   basketError: null,
@@ -110,7 +102,7 @@ async function api(path, body) {
   return doc;
 }
 
-/* ---------------- store cards, from /api/caps ---------------- */
+/* ---------------- supermarket cards: the search selector, from /api/caps ---------------- */
 
 // The one mechanism sentence is the capability table's own label, capitalized and closed:
 // T29's wording verbatim, so no card states a mechanism the investigation did not prove.
@@ -124,40 +116,52 @@ function zoneShort(zone) {
   return zone.price_scoped ? "precio según la zona" : "precio de catálogo";
 }
 
-// One card, four facts: the status header, the logo with the price scope, one mechanism
-// sentence and one chip. The capability table supplies each of them once (T37).
+// S17: the capability table decides who can be asked. A chain that cannot search is never
+// offered a switch, so the page cannot promise a search its API does not do. An empty table
+// (the caps request failed) claims nothing either: the six known chains stay queryable.
+function canSearch(store) {
+  const cap = ((state.caps && state.caps.chains) || []).find((c) => c.store === store);
+  return !cap || cap.search !== false;
+}
+
+// The chains this page will ask, in the server's own order: what the shopper left checked
+// and the table allows. Every request that fans out reads this one list.
+function picked() {
+  return chainOrder().filter((store) => canSearch(store) && !state.off.has(store));
+}
+
+// One card, four facts: the mark on the left, the search switch, the price scope, one
+// mechanism sentence and one chip. The mark is the card's left column, so the six cards
+// line up on it, and it stays the chain's accessible name (S16).
 function shopCard(cap) {
   const name = nameOf(cap.store);
-  const pickable = PICKABLE.has(cap.store);
+  const searchable = canSearch(cap.store);
   const zone = cap.zone || { mode: "none", price_scoped: false, label: "sin datos" };
   const tagClass = MODE_TAG[zone.mode] || "tag";
   const li = document.createElement("li");
-  li.className = "shop" + (pickable ? "" : " no-pick");
+  li.className = "shop" + (searchable ? "" : " no-pick");
   li.dataset.chain = cap.store;
-  const control = pickable
-    ? `<input type="checkbox" data-chain="${esc(cap.store)}" aria-label="Usar la tienda de ${name}"${state.chosen[cap.store] ? " checked" : ""}>`
+  const control = searchable
+    ? `<input type="checkbox" data-chain="${esc(cap.store)}" aria-label="Buscar en ${name}"${state.off.has(cap.store) ? "" : " checked"}>`
     : "";
-  const label = pickable ? "Usar esta tienda" : "Sin tienda que elegir";
-  // The store line is the example the section disclaimer covers, so only a card that has
-  // a store to choose keeps it; a chain with no store has no example to show.
-  const body = `
-      <span class="shop-check">${control}<span class="lab">${label}</span></span>
-      <span class="shop-name">${logo(cap.store)}<span class="dist">${esc(zoneShort(zone))}</span></span>
-      ${pickable ? `<span class="addr">${esc(STORE_HINT[cap.store] || "")}</span>` : ""}
-      <span class="cap">${esc(mechanism(zone))}</span>`;
-  li.innerHTML = (pickable ? `<label class="shop-label">${body}</label>` : `<span class="shop-label">${body}</span>`) +
+  const label = searchable ? "Buscar aquí" : "Su API no permite buscar";
+  const inner = `<span class="shop-logo">${logo(cap.store)}</span>
+      <span class="shop-body">
+        <span class="shop-check">${control}<span class="lab">${label}</span></span>
+        <span class="dist">${esc(zoneShort(zone))}</span>
+        <span class="cap">${esc(mechanism(zone))}</span>
+      </span>`;
+  li.innerHTML = (searchable ? `<label class="shop-label">${inner}</label>` : `<span class="shop-label">${inner}</span>`) +
     `<div class="shop-foot"><span class="tag ${tagClass}">${zone.price_scoped ? ICON.warn : ICON.check}${esc(MODE_CHIP[zone.mode] || "Sin zona")}</span></div>`;
   return li;
 }
 
 function updatePicked() {
-  const chains = chainOrder();
-  const pickable = chains.filter((s) => PICKABLE.has(s));
-  const n = pickable.filter((s) => state.chosen[s]).length;
-  // The counter names the capability before the selection, so next to a card that says
-  // «sin tienda que elegir» it reads as a fact instead of a contradiction (T37).
-  $("picked").textContent = pickable.length + " de " + chains.length +
-    " cadenas permiten elegir tienda · " + n + (n === 1 ? " elegida" : " elegidas");
+  // The counter is the request: how many chains the next search will ask, out of the ones
+  // this page knows. A card left unchecked is never a silent difference between the page
+  // and the payload.
+  const n = picked().length;
+  $("picked").textContent = n + " de " + chainOrder().length + " supermercados";
 }
 
 function renderShops() {
@@ -166,7 +170,7 @@ function renderShops() {
   const caps = (state.caps && state.caps.chains) || [];
   if (!caps.length) {
     $("picked").textContent = "";
-    note("No se pudo leer qué puede hacer cada cadena, así que no se puede decir qué haría con tu zona.", true);
+    note("No se pudo leer qué puede hacer cada cadena, así que no hay tarjetas que marcar. La búsqueda se hará en las seis.", true);
     return;
   }
   note("");
@@ -174,16 +178,24 @@ function renderShops() {
   updatePicked();
 }
 
-// The checkbox is the store choice: it moves the counter and strikes that chain's own basket
-// in the comparison, which is why the counter reads as a sentence and stays live.
+// The checkbox is the whole selector: it moves the counter and the next search, and it
+// withdraws the results already on screen — those were a different question.
 $("shops").addEventListener("change", (event) => {
   const box = event.target.closest("input[data-chain]");
   if (!box) return;
-  const name = nameOf(box.dataset.chain);
-  state.chosen[box.dataset.chain] = box.checked;
+  const store = box.dataset.chain;
+  const name = nameOf(store);
+  if (box.checked) state.off.delete(store);
+  else state.off.add(store);
   updatePicked();
-  announce(box.checked ? "Vuelve a competir la tienda de " + name + "." : "Descartada la tienda de " + name + " de la comparación.");
-  renderComparison();
+  announce(box.checked ? name + " entra en la búsqueda." : name + " queda fuera de la búsqueda.");
+  // The results on screen answered a different question: drop them instead of mixing the
+  // old blocks with the new selection, and spend no request until the shopper asks again.
+  if (state.searched) {
+    $("hits").innerHTML = "";
+    state.searched = null;
+    $("search-status").textContent = "Has cambiado los supermercados marcados: busca otra vez.";
+  }
 });
 
 async function loadCaps() {
@@ -195,26 +207,6 @@ async function loadCaps() {
   }
   renderShops();
 }
-
-/* ---------------- postal code: no filtering yet ---------------- */
-
-$("postal-form").addEventListener("submit", (event) => {
-  event.preventDefault();
-  const raw = $("cp").value.trim();
-  $("cp-fine").hidden = true;
-  if (!/^\d{5}$/.test(raw)) {
-    $("cp-status").textContent = "Escribe los cinco dígitos del código postal.";
-    $("cp").focus();
-    return;
-  }
-  state.cp = raw;
-  $("zone-cp").textContent = raw;
-  $("cp-head").textContent = raw;
-  const msg = "Código postal " + raw + " guardado. En esta fase no filtra precios: cada tarjeta dice qué haría esa cadena con él.";
-  $("cp-status").textContent = msg;
-  announce(msg);
-});
-$("cp").addEventListener("input", () => { $("cp-status").textContent = ""; });
 
 /* ---------------- search ---------------- */
 
@@ -233,15 +225,26 @@ const chainPages = {}; // store -> {term, limit}: how far that block has been pa
 
 // fresh skips the server's 60 s cache: that is what «reintentar» means, since a cached
 // failure would otherwise replay the same answer.
+//
+// S17: the request names the chains to ask, so a chain the shopper left unchecked costs no
+// network pass and cannot turn up in a block, a count or a failure line.
 async function runSearch(term, fresh) {
   const hits = $("hits");
-  $("search-status").textContent = "Buscando «" + term + "» en las seis cadenas…";
+  const stores = picked();
+  if (!stores.length) {
+    $("search-status").textContent = "Marca al menos un supermercado para buscar.";
+    $("shops").querySelector("input[data-chain]")?.focus();
+    return;
+  }
+  $("search-status").textContent = "Buscando «" + term + "» en " + stores.length +
+    (stores.length === 1 ? " supermercado…" : " supermercados…");
   hits.innerHTML = skeletonRows(3, "hit");
   hits.setAttribute("aria-busy", "true");
   seenHits.clear();
   for (const store of Object.keys(chainPages)) delete chainPages[store];
   try {
-    const doc = await api("/api/search" + (fresh ? "?fresh=1" : ""), { term: term, limit: PAGE });
+    const doc = await api("/api/search" + (fresh ? "?fresh=1" : ""),
+      { term: term, limit: PAGE, stores: stores });
     state.lastTerm = term;
     renderHits(doc, term);
   } catch (err) {
@@ -277,7 +280,7 @@ function updateSearchStatus() {
   if (!s) return;
   const n = seenHits.size;
   $("search-status").textContent = n + (n === 1 ? " resultado" : " resultados") +
-    " en " + Object.keys(chainPages).length + " de " + s.asked + " cadenas para «" + s.term + "».";
+    " en " + Object.keys(chainPages).length + " de " + s.asked + " supermercados para «" + s.term + "».";
 }
 
 // The pin is an icon-only button: the basket mark is the whole label, so its accessible name
@@ -286,8 +289,8 @@ function updateSearchStatus() {
 function hitRow(store, h, term) {
   const name = nameOf(store);
   const label = "Añadir " + (h.size ? h.name + " " + h.size : h.name) + " a la cesta de " + name;
-  return `<li>
-      <span class="pname">${esc(h.name)}${h.size ? " · " + esc(h.size) : ""}</span>
+  return `<li${h.price == null ? "" : ` data-price="${esc(h.price)}"`}>
+      <span class="pname">${esc(h.name)}${h.size ? " · " + esc(h.size) : ""}<span class="pcheap" hidden>más barato</span></span>
       <span class="pprice">${h.price == null ? "sin precio" : euros(h.price)}</span>
       <button class="btn btn-quiet btn-icon" type="button" data-pin="${esc(store)}" data-id="${esc(h.id)}" data-name="${esc(h.name)}" aria-label="${esc(label)}" title="${esc(label)}">${ICON.basket}</button>
     </li>`;
@@ -306,6 +309,26 @@ function hitChain(r, term) {
   return li;
 }
 
+// The cheapest row of a block is the lowest price the chain prints for it, never the price
+// per unit, and one priced row proves nothing: with fewer than two there is no mark. The
+// winner is re-decided over every visible row, so «ver más» can move it.
+function markCheapest(list) {
+  const rows = [...list.querySelectorAll("li[data-price]")];
+  for (const row of rows) {
+    row.removeAttribute("data-cheap");
+    const tag = row.querySelector(".pcheap");
+    if (tag) tag.hidden = true;
+  }
+  if (rows.length < 2) return;
+  let best = rows[0];
+  for (const row of rows) {
+    if (Number(row.dataset.price) < Number(best.dataset.price)) best = row;
+  }
+  best.dataset.cheap = "1";
+  const tag = best.querySelector(".pcheap");
+  if (tag) tag.hidden = false;
+}
+
 // Appends only what the block has not shown, then decides the control's fate: ask for more
 // only while the chain filled the page it was asked for and the cap still leaves room. A
 // chain that came up short, or reached the cap, gets a line instead of a dead button.
@@ -320,6 +343,7 @@ function appendHits(el, r, term) {
     added++;
   }
   if (!list.children.length) list.innerHTML = '<li class="hit-down">Sin resultados para este término.</li>';
+  markCheapest(list);
   el.querySelector("[data-count]").textContent = r.count + (r.count === 1 ? " resultado" : " resultados");
   const page = chainPages[r.store];
   const more = el.querySelector(".hit-more");
@@ -332,8 +356,8 @@ function appendHits(el, r, term) {
   return added;
 }
 
-// «ver más» is one request for the same term and a bigger page: no sort, no filter, no
-// brand rule, so the order the shopper reads is still the store's own.
+// «ver más» is one request for the same term and a bigger page of **that** chain: no sort,
+// no filter, no brand rule, and no other chain's quota spent on it.
 async function pageMore(store, btn) {
   const page = chainPages[store];
   if (!page) return;
@@ -343,7 +367,7 @@ async function pageMore(store, btn) {
   btn.disabled = true;
   btn.textContent = "Pidiendo más…";
   try {
-    const doc = await api("/api/search", { term: page.term, limit: limit });
+    const doc = await api("/api/search", { term: page.term, limit: limit, stores: [store] });
     const r = doc.results.find((x) => x.store === store);
     if (!r) throw new Error("la cadena no vino en la respuesta");
     if (r.error) throw new Error(failWhy(failureOf(r).code));
@@ -470,7 +494,8 @@ function chainSection(chain) {
   li.innerHTML = `
     <div class="bc-head">
       ${logo(store)}
-      <span class="bc-name">${esc(nameOf(store))}</span>
+      <span class="bc-name sr">${esc(nameOf(store))}</span>
+      <span class="bc-count">${esc(countOf(lines.length))}</span>
       ${chain.stale && chain.stale.length ? `<span class="tag tag-warn">${ICON.warn}Sin confirmar</span>` : ""}
       <span class="bc-sub">${sub}</span>
     </div>
@@ -628,10 +653,6 @@ function skeletonRows(n, kind) {
   return Array.from({ length: n }, () => `<li class="sk-row sk-${kind}" aria-hidden="true">${row}</li>`).join("");
 }
 
-function isDiscarded(store) {
-  return PICKABLE.has(store) && !state.chosen[store];
-}
-
 function compEmpty(text, retry) {
   $("comp-empty").hidden = false;
   $("comp-empty-text").textContent = text;
@@ -650,12 +671,13 @@ function chainBaskets() {
 
 // One chain's own basket: its mark, how many items it holds and what it costs. No position
 // and no delta against another chain — those would rank baskets that hold different goods.
+// The picker chooses where to search, not which basket disappears: a line the shopper added
+// keeps being priced in its chain even after the chain is taken off the search.
 function comparisonRow(chain, lines) {
-  const discarded = isDiscarded(chain.store);
   const li = document.createElement("li");
-  li.className = "row" + (discarded ? " is-out" : "");
+  li.className = "row";
   li.dataset.chain = chain.store;
-  const why = discarded ? " · tienda descartada" : chain.stale.length ? " · sin confirmar" : "";
+  const why = chain.stale.length ? " · sin confirmar" : "";
   li.innerHTML = `<span class="who">${logo(chain.store)}<span class="st">${esc(countOf(lines.length))}${esc(why)}</span></span>
       <span class="val">${chain.totalCents == null ? "—" : money(chain.totalCents)}</span>`;
   return li;

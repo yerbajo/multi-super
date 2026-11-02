@@ -733,7 +733,6 @@ func TestCheapestRowIsMarkedByPrice(t *testing.T) {
 		"only this block":       "li[data-price]",
 		"the previous mark out": `removeAttribute("data-cheap")`,
 		"the one mark":          `dataset.cheap = "1"`,
-		"the label shown":       "hidden = false",
 	} {
 		if !strings.Contains(mark, want) {
 			t.Errorf("%s: markCheapest is missing %q", what, want)
@@ -741,5 +740,39 @@ func TestCheapestRowIsMarkedByPrice(t *testing.T) {
 	}
 	if !strings.Contains(fnBody(t, js, "function appendHits("), "markCheapest(list)") {
 		t.Error("an appended page does not re-decide the cheapest row over all visible rows")
+	}
+}
+
+// TestCheapestOfTheSearchIsMarkedOnce pins the second mark: the cheapest row of the whole
+// search is decided across the chain blocks, only when two chains actually answered with a
+// price, and it owns the row's label so it never stacks with the chain's own.
+func TestCheapestOfTheSearchIsMarkedOnce(t *testing.T) {
+	js := read(t, "app.js")
+	row := fnBody(t, js, "function hitRow(")
+	for what, want := range map[string]string{
+		"the label":       `<span class="pglobal" hidden>el más barato de todos</span>`,
+		"the chain label": `<span class="pcheap" hidden>más barato</span>`,
+	} {
+		if !strings.Contains(row, want) {
+			t.Errorf("%s: hitRow is missing %q", what, want)
+		}
+	}
+	all := fnBody(t, js, "function markCheapestOfAll(")
+	for what, want := range map[string]string{
+		"every block":        `.hit-products li[data-price]`,
+		"the chain of a row": `.closest(".hit-chain").dataset.chain`,
+		"at least two":       "chains.size > 1",
+		"its own attribute":  `best.dataset.cheapest = "1"`,
+		"one label per row":  "if (chain) chain.hidden = outright || !here;",
+	} {
+		if !strings.Contains(all, want) {
+			t.Errorf("%s: markCheapestOfAll is missing %q", what, want)
+		}
+	}
+	if !strings.Contains(fnBody(t, js, "function appendHits("), "markCheapestOfAll()") {
+		t.Error("nothing calls markCheapestOfAll, so the cross-chain mark is never drawn")
+	}
+	if !strings.Contains(fnBody(t, js, "function markCheapest("), `best.dataset.cheap = "1"`) {
+		t.Error("the chain mark stopped marking its own winner")
 	}
 }

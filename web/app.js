@@ -290,7 +290,7 @@ function hitRow(store, h, term) {
   const name = nameOf(store);
   const label = "Añadir " + (h.size ? h.name + " " + h.size : h.name) + " a la cesta de " + name;
   return `<li${h.price == null ? "" : ` data-price="${esc(h.price)}"`}>
-      <span class="pname">${esc(h.name)}${h.size ? " · " + esc(h.size) : ""}<span class="pcheap" hidden>más barato</span></span>
+      <span class="pname">${esc(h.name)}${h.size ? " · " + esc(h.size) : ""}<span class="pglobal" hidden>el más barato de todos</span><span class="pcheap" hidden>más barato</span></span>
       <span class="pprice">${h.price == null ? "sin precio" : euros(h.price)}</span>
       <button class="btn btn-quiet btn-icon" type="button" data-pin="${esc(store)}" data-id="${esc(h.id)}" data-name="${esc(h.name)}" aria-label="${esc(label)}" title="${esc(label)}">${ICON.basket}</button>
     </li>`;
@@ -314,19 +314,40 @@ function hitChain(r, term) {
 // winner is re-decided over every visible row, so «ver más» can move it.
 function markCheapest(list) {
   const rows = [...list.querySelectorAll("li[data-price]")];
-  for (const row of rows) {
-    row.removeAttribute("data-cheap");
-    const tag = row.querySelector(".pcheap");
-    if (tag) tag.hidden = true;
-  }
+  for (const row of rows) row.removeAttribute("data-cheap");
   if (rows.length < 2) return;
   let best = rows[0];
   for (const row of rows) {
     if (Number(row.dataset.price) < Number(best.dataset.price)) best = row;
   }
   best.dataset.cheap = "1";
-  const tag = best.querySelector(".pcheap");
-  if (tag) tag.hidden = false;
+}
+
+// The cheapest row of the whole search is a different claim from the cheapest row of one
+// chain: it puts six catalogues next to each other, so it is made only when at least two
+// chains answered with a price. It owns the row's label when it lands on a row that is also
+// its chain's cheapest, and leaves that label to the chain when it does not: one row, one
+// word, so the two marks never stack.
+function markCheapestOfAll() {
+  const rows = [...document.querySelectorAll(".hit-products li[data-price]")];
+  for (const row of rows) row.removeAttribute("data-cheapest");
+  const chains = new Set(rows.map((row) => row.closest(".hit-chain").dataset.chain));
+  let best = null;
+  if (chains.size > 1) {
+    best = rows[0];
+    for (const row of rows) {
+      if (Number(row.dataset.price) < Number(best.dataset.price)) best = row;
+    }
+    best.dataset.cheapest = "1";
+  }
+  for (const row of rows) {
+    const outright = row === best;
+    const here = row.dataset.cheap === "1";
+    const all = row.querySelector(".pglobal");
+    const chain = row.querySelector(".pcheap");
+    if (all) all.hidden = !outright;
+    if (chain) chain.hidden = outright || !here;
+  }
 }
 
 // Appends only what the block has not shown, then decides the control's fate: ask for more
@@ -344,6 +365,7 @@ function appendHits(el, r, term) {
   }
   if (!list.children.length) list.innerHTML = '<li class="hit-down">Sin resultados para este término.</li>';
   markCheapest(list);
+  markCheapestOfAll();
   el.querySelector("[data-count]").textContent = r.count + (r.count === 1 ? " resultado" : " resultados");
   const page = chainPages[r.store];
   const more = el.querySelector(".hit-more");

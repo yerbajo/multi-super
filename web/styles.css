@@ -305,6 +305,20 @@ main{max-width:1160px;margin-inline:auto;padding:var(--sp-6) var(--sp-7) 0;flex:
   margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);border-radius:var(--r-1);
 }
 .hit-products li[data-cheap] .pprice{color:var(--accent)}
+/* The cheapest row of the whole search carries the harder mark: the pine wash and the 2px
+   pine rule speak about the comparison across chains, the mint one about the chain's own
+   list. Only one of the two labels is on a row, so they never stack. */
+.hit-products li[data-cheapest]{
+  background:color-mix(in oklab,var(--accent-deep) 7%,var(--surface));
+  box-shadow:inset 2px 0 0 var(--accent-deep);
+  margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);border-radius:var(--r-1);
+}
+.hit-products li[data-cheapest] .pprice{color:var(--accent-deep);font-weight:800}
+.hit-products .pglobal{
+  display:inline-block;margin-inline-start:var(--sp-2);padding:2px var(--sp-2);
+  border-radius:var(--r-1);background:var(--accent-deep);color:var(--accent-deep-ink);
+  font-size:11px;font-weight:700;line-height:1.4;white-space:nowrap;
+}
 .hit-products .pcheap{
   display:inline-block;margin-inline-start:var(--sp-2);padding:1px var(--sp-2);
   border-radius:var(--r-1);background:var(--surface);color:var(--accent);

@@ -108,6 +108,11 @@ Dentro del bloque de cada cadena, la fila más barata va remarcada con el precio
 propia fila (no con el precio por unidad, que es otra pregunta). Una fila sin precio nunca se
 marca y un bloque con menos de dos precios no se marca: un solo resultado no es «el más barato».
 
+Sobre esas mismas filas va un segundo distintivo, más fuerte: **el más barato de todos**, el
+precio más bajo de la búsqueda entera. Solo aparece cuando al menos dos cadenas respondieron con
+precio —comparar una sola no es comparar— y cuando cae en una fila que ya era la más barata de su
+cadena, la fila lleva una etiqueta, no dos.
+
 ### Marcas de las cadenas
 
 Las seis marcas viajan dentro del binario, en un sprite inline: la página no pide ninguna

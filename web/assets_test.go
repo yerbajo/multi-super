@@ -704,3 +704,42 @@ func TestPinIsABasketIconButton(t *testing.T) {
 		}
 	}
 }
+
+// TestCheapestRowIsMarkedByPrice pins the one marked row of a chain's block: the row whose
+// printed price is the lowest (never the price per unit), no mark when there is nothing to
+// compare, and a re-decision over every visible row each time a page is appended.
+func TestCheapestRowIsMarkedByPrice(t *testing.T) {
+	js := read(t, "app.js")
+	row := fnBody(t, js, "function hitRow(")
+	for what, want := range map[string]string{
+		"the printed price on the row": `data-price="${esc(h.price)}"`,
+		"a hidden label":               `<span class="pcheap" hidden>más barato</span>`,
+	} {
+		if !strings.Contains(row, want) {
+			t.Errorf("%s: hitRow is missing %q", what, want)
+		}
+	}
+	// The label lives inside .pname, after the name and the size: the grid of a row keeps
+	// its three columns.
+	name, tag := strings.Index(row, `<span class="pname">`), strings.Index(row, `class="pcheap"`)
+	if name < 0 || tag < name {
+		t.Error("the cheapest label is not inside .pname, so it would add a grid column")
+	}
+
+	mark := fnBody(t, js, "function markCheapest(")
+	for what, want := range map[string]string{
+		"the printed price":     "dataset.price",
+		"nothing to compare":    "rows.length < 2",
+		"only this block":       "li[data-price]",
+		"the previous mark out": `removeAttribute("data-cheap")`,
+		"the one mark":          `dataset.cheap = "1"`,
+		"the label shown":       "hidden = false",
+	} {
+		if !strings.Contains(mark, want) {
+			t.Errorf("%s: markCheapest is missing %q", what, want)
+		}
+	}
+	if !strings.Contains(fnBody(t, js, "function appendHits("), "markCheapest(list)") {
+		t.Error("an appended page does not re-decide the cheapest row over all visible rows")
+	}
+}

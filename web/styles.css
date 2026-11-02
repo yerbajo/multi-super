@@ -295,6 +295,20 @@ main{max-width:1160px;margin-inline:auto;padding:var(--sp-6) var(--sp-7) 0;flex:
 .hit-products .pname{font-size:0.84375rem;line-height:1.45;min-width:0;overflow-wrap:anywhere}
 .hit-products .pprice{font-size:0.84375rem;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;justify-self:end;min-width:64px;text-align:end}
 .hit-down{font-size:var(--text-sm);color:var(--ink-2)}
+/* The cheapest row of a block: the lowest printed price, washed in mint with the accent rule
+   on its left. Nothing else on the row changes; the pill lives inside .pname, never in a
+   fourth grid column. */
+.hit-products li[data-cheap]{
+  background:color-mix(in oklab,var(--accent-soft) 60%,transparent);
+  box-shadow:inset 2px 0 0 var(--accent);
+  margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);border-radius:var(--r-1);
+}
+.hit-products li[data-cheap] .pprice{color:var(--accent)}
+.hit-products .pcheap{
+  display:inline-block;margin-inline-start:var(--sp-2);padding:1px var(--sp-2);
+  border-radius:var(--r-1);background:var(--surface);color:var(--accent);
+  font-size:11px;font-weight:700;line-height:1.4;white-space:nowrap;
+}
 /* «ver más» sits under its own chain: one control per page, never a sort control. */
 .hit-more{margin-block-start:var(--sp-3);font-size:var(--text-xs);color:var(--ink-3);display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
 .hit-more .btn{width:100%;border-color:var(--line);background:var(--surface-2);color:var(--ink-2)}

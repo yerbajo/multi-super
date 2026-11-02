@@ -289,8 +289,8 @@ function updateSearchStatus() {
 function hitRow(store, h, term) {
   const name = nameOf(store);
   const label = "Añadir " + (h.size ? h.name + " " + h.size : h.name) + " a la cesta de " + name;
-  return `<li>
-      <span class="pname">${esc(h.name)}${h.size ? " · " + esc(h.size) : ""}</span>
+  return `<li${h.price == null ? "" : ` data-price="${esc(h.price)}"`}>
+      <span class="pname">${esc(h.name)}${h.size ? " · " + esc(h.size) : ""}<span class="pcheap" hidden>más barato</span></span>
       <span class="pprice">${h.price == null ? "sin precio" : euros(h.price)}</span>
       <button class="btn btn-quiet btn-icon" type="button" data-pin="${esc(store)}" data-id="${esc(h.id)}" data-name="${esc(h.name)}" aria-label="${esc(label)}" title="${esc(label)}">${ICON.basket}</button>
     </li>`;
@@ -309,6 +309,25 @@ function hitChain(r, term) {
   return li;
 }
 
+// The cheapest row of a block is the lowest price the chain prints for it, never the price
+// per unit, and one priced row proves nothing: with fewer than two there is no mark. The
+// winner is re-decided over every visible row, so «ver más» can move it.
+function markCheapest(list) {
+  const rows = [...list.querySelectorAll("li[data-price]")];
+  for (const row of rows) {
+    row.removeAttribute("data-cheap");
+    const tag = row.querySelector(".pcheap");
+    if (tag) tag.hidden = true;
+  }
+  if (rows.length < 2) return;
+  let best = rows[0];
+  for (const row of rows) {
+    if (Number(row.dataset.price) < Number(best.dataset.price)) best = row;
+  }
+  best.dataset.cheap = "1";
+  const tag = best.querySelector(".pcheap");
+  if (tag) tag.hidden = false;
+}
 
 // Appends only what the block has not shown, then decides the control's fate: ask for more
 // only while the chain filled the page it was asked for and the cap still leaves room. A
@@ -324,6 +343,7 @@ function appendHits(el, r, term) {
     added++;
   }
   if (!list.children.length) list.innerHTML = '<li class="hit-down">Sin resultados para este término.</li>';
+  markCheapest(list);
   el.querySelector("[data-count]").textContent = r.count + (r.count === 1 ? " resultado" : " resultados");
   const page = chainPages[r.store];
   const more = el.querySelector(".hit-more");

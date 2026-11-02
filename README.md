@@ -104,6 +104,10 @@ cesta en cada fila: pulsarlo añade ese producto a la cesta de **esa** cadena. L
 supermercado a supermercado, con el subtotal de cada uno, y los productos elegidos van marcados
 como tales.
 
+Dentro del bloque de cada cadena, la fila más barata va remarcada con el precio que imprime la
+propia fila (no con el precio por unidad, que es otra pregunta). Una fila sin precio nunca se
+marca y un bloque con menos de dos precios no se marca: un solo resultado no es «el más barato».
+
 ## Relevancia y vocabulario
 
 Dos correcciones que el catálogo de las tiendas obliga a hacer, y que no son cosmética:

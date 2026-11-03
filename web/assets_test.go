@@ -376,48 +376,61 @@ func TestTheCardsAreTheSearchSelector(t *testing.T) {
 	}
 }
 
-// TestSearchPagesPerChain pins T39: the first ask is ten rows per chain, «ver más» re-asks
-// the same query for a bigger page up to the ceiling instead of reordering anything, the
-// appended rows are deduped by store+id, and one line under the results says whose order
-// the shopper is reading.
-func TestSearchPagesPerChain(t *testing.T) {
+// TestSearchFetchesOnceAndRevealsLocally pins the search's page contract: the first ask buys
+// FETCH rows per chain, each block shows PAGE of them and opens the rest it already holds with
+// no request, and the control is retired with a line once nothing is left hidden.
+func TestSearchFetchesOnceAndRevealsLocally(t *testing.T) {
 	js, html := read(t, "app.js"), read(t, "index.html")
 
 	for what, want := range map[string]string{
-		"first page":  "const PAGE = 10;",
-		"first ask":   "term: term, limit: PAGE",
-		"page cap":    "const PAGE_CAP = 100;",
-		"bigger page": "Math.min(limit * 2, PAGE_CAP)",
+		"one visible page": "const PAGE = 10;",
+		"one fetch size":   "const FETCH = 30;",
+		"the first ask":    "term: term, limit: FETCH, stores: stores",
 	} {
 		if !strings.Contains(js, want) {
 			t.Errorf("%s: app.js is missing %q", what, want)
 		}
 	}
+	// The paging that asked the server for the same rows again is gone, not renamed.
+	for _, gone := range []string{"PAGE_CAP", "nextLimit", "pageMore", "page.limit", "stores: [store]"} {
+		if strings.Contains(js, gone) {
+			t.Errorf("app.js still buys the same rows twice: %q", gone)
+		}
+	}
 
-	// The block carries the control, and the control asks the chain for a bigger page of the
-	// same term — never a different order.
+	// The block renders every row it was given and leaves all but the first page hidden.
 	if !strings.Contains(fnBody(t, js, "function hitChain("), "appendHits(") {
 		t.Error("the chain block never feeds its rows through appendHits")
 	}
 	rows := fnBody(t, js, "function appendHits(")
-	for _, want := range []string{`data-more="${esc(r.store)}"`, "Ver más en "} {
+	for _, want := range []string{"if (shown >= PAGE) list.lastElementChild.hidden = true;", "updateMore("} {
 		if !strings.Contains(rows, want) {
-			t.Errorf("the chain block has no «ver más» control: missing %q", want)
+			t.Errorf("the block does not hide its own second page: missing %q", want)
 		}
 	}
-	more := fnBody(t, js, "async function pageMore(")
-	for _, want := range []string{
-		"nextLimit(page.limit)",
-		"{ term: page.term, limit: limit, stores: [store] }",
-		"appendHits(",
-		"updateSearchStatus()",
-	} {
+
+	// «ver más» reads the block, never the network.
+	more := fnBody(t, js, "function revealMore(")
+	for _, want := range []string{`li[hidden]`, "slice(0, PAGE)", "row.hidden = false", "markCheapest(list)"} {
 		if !strings.Contains(more, want) {
-			t.Errorf("«ver más» does not extend the same query: missing %q", want)
+			t.Errorf("«ver más» does not reveal the rows the block holds: missing %q", want)
+		}
+	}
+	for _, bad := range []string{"api(", "fetch(", "await"} {
+		if strings.Contains(more, bad) {
+			t.Errorf("«ver más» still makes a request for rows it already has: %q", bad)
 		}
 	}
 	if !strings.Contains(js, `closest("[data-more]")`) {
 		t.Error("«ver más» has no click listener, so it is a dead button")
+	}
+
+	// The control is retired with its reason instead of leaving a button that does nothing.
+	retire := fnBody(t, js, "function updateMore(")
+	for _, want := range []string{`data-more="${esc(store)}"`, "Ver más en ", `"Sin más resultados en "`} {
+		if !strings.Contains(retire, want) {
+			t.Errorf("the control is not retired with its reason: missing %q", want)
+		}
 	}
 
 	// Appended rows dedupe by the pair, not the id: every chain numbers its own catalogue.
@@ -426,15 +439,7 @@ func TestSearchPagesPerChain(t *testing.T) {
 		"if (seenHits.has(key)) continue;",
 	} {
 		if !strings.Contains(js, want) {
-			t.Errorf("appended rows are not deduped by store+id: missing %q", want)
-		}
-	}
-
-	// A chain that returns fewer rows than asked, or reaches the cap, loses the control and
-	// says why, instead of leaving a button that does nothing.
-	for _, want := range []string{"r.hits.length < page.limit", "Sin más resultados en "} {
-		if !strings.Contains(js, want) {
-			t.Errorf("the control is not retired with its reason: missing %q", want)
+			t.Errorf("a row is not deduped by store+id: missing %q", want)
 		}
 	}
 
@@ -445,8 +450,8 @@ func TestSearchPagesPerChain(t *testing.T) {
 		}
 	}
 
-	// One honest line under the results: the order is each store's, ours only lifts the hits
-	// that carry the shopper's words.
+	// One honest line under the results: the order is each store's, ours only lifts the rows
+	// that carry the shopper's words, and the ones that do not are hidden, not silently gone.
 	at := strings.Index(html, `id="hits-note"`)
 	if at < 0 {
 		t.Fatal("index.html has no honesty line under the results")
@@ -459,10 +464,51 @@ func TestSearchPagesPerChain(t *testing.T) {
 		"dentro de cada cadena",
 		"solo ponemos delante los resultados que contienen tus palabras",
 		"sin reordenar por marca ni por precio",
+		"no se muestran",
 	} {
 		if !strings.Contains(line, want) {
 			t.Errorf("the honesty line does not say %q", want)
 		}
+	}
+}
+
+// TestNonMatchingRowsAreHiddenAndDeclared pins the declared cut: only the rows the query
+// describes are rendered, the counter and the page status count those rows, and a chain that
+// dropped rows says how many at the foot of its block instead of hiding the subtraction.
+func TestNonMatchingRowsAreHiddenAndDeclared(t *testing.T) {
+	js := read(t, "app.js")
+	rows := fnBody(t, js, "function appendHits(")
+
+	for what, want := range map[string]string{
+		"only described rows":      "r.hits.filter((h) => h.matched !== false)",
+		"the honest counter":       `textContent = matched.length +`,
+		"one shape for a count":    `(matched.length === 1 ? " resultado" : " resultados")`,
+		"its own declared line":    `el.querySelector(".hit-drop")`,
+		"the count of what it hid": "const dropped = r.hits.length - matched.length",
+	} {
+		if !strings.Contains(rows, want) {
+			t.Errorf("%s: appendHits is missing %q", what, want)
+		}
+	}
+	// The line names the term and the number: a row is never dropped in silence.
+	for _, want := range []string{`y no se muestra`, "«" + `" + term + "` + "»", "de esta cadena no coincide"} {
+		if !strings.Contains(rows, want) {
+			t.Errorf("the declared cut does not say %q", want)
+		}
+	}
+
+	// The page-level status counts matching rows only, because only those rows are recorded.
+	if got := strings.Count(js, "seenHits.add("); got != 1 {
+		t.Fatalf("seenHits is filled in %d places, want the one that filters first", got)
+	}
+	if strings.Index(rows, "r.hits.filter((h) => h.matched !== false)") > strings.Index(rows, "seenHits.add(") {
+		t.Error("a row is counted before it is judged: the status would count the hidden ones")
+	}
+	if !strings.Contains(fnBody(t, js, "function updateSearchStatus("), "seenHits.size") {
+		t.Error("the page-level status does not count the rows on the page")
+	}
+	if strings.Contains(js, "r.count +") {
+		t.Error("a block still counts the rows it did not render")
 	}
 }
 
@@ -730,7 +776,7 @@ func TestCheapestRowIsMarkedByPrice(t *testing.T) {
 	for what, want := range map[string]string{
 		"the printed price":     "dataset.price",
 		"nothing to compare":    "rows.length < 2",
-		"only this block":       "li[data-price]",
+		"only this block":       "li[data-price]:not([hidden])",
 		"the previous mark out": `removeAttribute("data-cheap")`,
 		"the one mark":          `dataset.cheap = "1"`,
 		"the label shown":       "hidden = false",
@@ -739,7 +785,14 @@ func TestCheapestRowIsMarkedByPrice(t *testing.T) {
 			t.Errorf("%s: markCheapest is missing %q", what, want)
 		}
 	}
-	if !strings.Contains(fnBody(t, js, "function appendHits("), "markCheapest(list)") {
-		t.Error("an appended page does not re-decide the cheapest row over all visible rows")
+	// A row the shopper cannot see is never the cheapest of anything: the choice is made
+	// over the visible rows only, and re-made each time a page is revealed.
+	if !strings.Contains(mark, "li[data-price]:not([hidden])") {
+		t.Error("a hidden row can still be marked as the cheapest of its block")
+	}
+	for _, caller := range []string{"function appendHits(", "function revealMore("} {
+		if !strings.Contains(fnBody(t, js, caller), "markCheapest(list)") {
+			t.Errorf("%s does not re-decide the cheapest row over the visible rows", strings.TrimSuffix(caller, "("))
+		}
 	}
 }

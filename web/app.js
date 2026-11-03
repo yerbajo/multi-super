@@ -210,18 +210,18 @@ async function loadCaps() {
 
 /* ---------------- search ---------------- */
 
-// Ten rows per chain is the page a shopper can read, and «ver más» asks the same query for
-// a bigger one: the store's own relevance keeps deciding the order, we only ask it for
-// more rows (T39). A chain that fills the page it was asked for may have more.
+// One search buys thirty rows per chain and each block shows ten of them: «ver más» opens the
+// next ten the block already holds, so the shopper's second look never re-asks the chain for
+// rows it already paid for (T39).
 const PAGE = 10;
-const PAGE_CAP = 100;
-const nextLimit = (limit) => Math.min(limit * 2, PAGE_CAP);
+const FETCH = 30;
 
 // A hit's identity is the pair, not the id: each chain numbers its own catalogue, and a
-// page appended twice must never draw a row twice.
+// page drawn twice must never draw a row twice. seenHits holds the rows the query describes,
+// which is what the page-level status counts.
 const hitKey = (store, hit) => store + "/" + hit.id;
 const seenHits = new Set();
-const chainPages = {}; // store -> {term, limit}: how far that block has been paged
+const chainPages = {}; // store -> true: one entry per block on the page
 
 // fresh skips the server's 60 s cache: that is what «reintentar» means, since a cached
 // failure would otherwise replay the same answer.
@@ -244,7 +244,7 @@ async function runSearch(term, fresh) {
   for (const store of Object.keys(chainPages)) delete chainPages[store];
   try {
     const doc = await api("/api/search" + (fresh ? "?fresh=1" : ""),
-      { term: term, limit: PAGE, stores: stores });
+      { term: term, limit: FETCH, stores: stores });
     state.lastTerm = term;
     renderHits(doc, term);
   } catch (err) {
@@ -273,8 +273,9 @@ function renderHits(doc, term) {
   updateSearchStatus();
 }
 
-// The count is live and counts what is on the page, so appending a page of one chain moves
-// it: the same aria-live line the visitor already hears from the basket.
+// The count is live and counts the rows on the page that the query actually describes — the
+// hidden second page included, because it is a result the shopper can open. Nothing here
+// counts a row the search judged as unrelated.
 function updateSearchStatus() {
   const s = state.searched;
   if (!s) return;
@@ -303,17 +304,19 @@ function hitChain(r, term) {
   li.innerHTML = `<div class="hit-head">${logo(r.store)}
       <span class="tag" data-count></span></div>
     <ul class="hit-products"></ul>
+    <p class="hit-drop" hidden></p>
     <p class="hit-more" hidden></p>`;
-  chainPages[r.store] = { term: term, limit: PAGE };
+  chainPages[r.store] = true;
   appendHits(li, r, term);
   return li;
 }
 
 // The cheapest row of a block is the lowest price the chain prints for it, never the price
 // per unit, and one priced row proves nothing: with fewer than two there is no mark. The
-// winner is re-decided over every visible row, so «ver más» can move it.
+// winner is re-decided over every row the shopper can see, so a hidden row is never called
+// the cheapest and revealing a page can move the mark.
 function markCheapest(list) {
-  const rows = [...list.querySelectorAll("li[data-price]")];
+  const rows = [...list.querySelectorAll("li[data-price]:not([hidden])")];
   for (const row of rows) {
     row.removeAttribute("data-cheap");
     const tag = row.querySelector(".pcheap");
@@ -329,59 +332,61 @@ function markCheapest(list) {
   if (tag) tag.hidden = false;
 }
 
-// Appends only what the block has not shown, then decides the control's fate: ask for more
-// only while the chain filled the page it was asked for and the cap still leaves room. A
-// chain that came up short, or reached the cap, gets a line instead of a dead button.
+// Renders the rows the query describes and leaves all but the first page hidden: the rest is
+// already here, so «ver más» opens it instead of buying the same rows again. The counter
+// counts what matched, and a chain that dropped rows says how many at the foot of its block
+// — a hidden row is declared, never silently subtracted from the count.
 function appendHits(el, r, term) {
   const list = el.querySelector(".hit-products");
-  let added = 0;
-  for (const h of r.hits) {
+  const matched = r.hits.filter((h) => h.matched !== false);
+  let shown = 0;
+  for (const h of matched) {
     const key = hitKey(r.store, h);
     if (seenHits.has(key)) continue;
     seenHits.add(key);
     list.insertAdjacentHTML("beforeend", hitRow(r.store, h, term));
-    added++;
+    if (shown >= PAGE) list.lastElementChild.hidden = true;
+    shown++;
   }
   if (!list.children.length) list.innerHTML = '<li class="hit-down">Sin resultados para este término.</li>';
   markCheapest(list);
-  el.querySelector("[data-count]").textContent = r.count + (r.count === 1 ? " resultado" : " resultados");
-  const page = chainPages[r.store];
-  const more = el.querySelector(".hit-more");
-  more.hidden = !r.count;
-  if (r.hits.length < page.limit || page.limit >= PAGE_CAP) {
-    more.innerHTML = "Sin más resultados en " + nameOf(r.store) + ".";
-  } else {
-    more.innerHTML = `<button class="btn btn-quiet btn-small" type="button" data-more="${esc(r.store)}">Ver más en ${nameOf(r.store)}</button>`;
+  el.querySelector("[data-count]").textContent = matched.length +
+    (matched.length === 1 ? " resultado" : " resultados");
+  const dropped = r.hits.length - matched.length;
+  const drop = el.querySelector(".hit-drop");
+  drop.hidden = dropped === 0;
+  if (dropped) {
+    drop.textContent = (dropped === 1
+      ? "1 resultado de esta cadena no coincide"
+      : dropped + " resultados de esta cadena no coinciden") +
+      " con «" + term + "» y no se muestra" + (dropped === 1 ? "" : "n") + ".";
   }
-  return added;
+  updateMore(el, r.store, matched.length > 0);
+  return shown;
 }
 
-// «ver más» is one request for the same term and a bigger page of **that** chain: no sort,
-// no filter, no brand rule, and no other chain's quota spent on it.
-async function pageMore(store, btn) {
-  const page = chainPages[store];
-  if (!page) return;
-  const name = nameOf(store);
+// The control under a block is a local reveal: it opens the next page the block already
+// holds. When nothing is left hidden it is replaced by the line that says so.
+function updateMore(el, store, hasRows) {
+  const more = el.querySelector(".hit-more");
+  more.hidden = !hasRows;
+  more.innerHTML = el.querySelectorAll(".hit-products li[hidden]").length
+    ? `<button class="btn btn-quiet btn-small" type="button" data-more="${esc(store)}">Ver más en ${nameOf(store)}</button>`
+    : "Sin más resultados en " + nameOf(store) + ".";
+}
+
+// «ver más» opens the next page of the rows the block already holds: no request, no new
+// order, no other chain's quota spent on it.
+function revealMore(store, btn) {
   const chain = btn.closest(".hit-chain");
-  const limit = nextLimit(page.limit);
-  btn.disabled = true;
-  btn.textContent = "Pidiendo más…";
-  try {
-    const doc = await api("/api/search", { term: page.term, limit: limit, stores: [store] });
-    const r = doc.results.find((x) => x.store === store);
-    if (!r) throw new Error("la cadena no vino en la respuesta");
-    if (r.error) throw new Error(failWhy(failureOf(r).code));
-    page.limit = limit;
-    const added = appendHits(chain, r, page.term);
-    updateSearchStatus();
-    announce(added
-      ? added + (added === 1 ? " resultado más en " : " resultados más en ") + name + "."
-      : "Sin más resultados en " + name + ".");
-  } catch (err) {
-    chain.querySelector(".hit-more").innerHTML =
-      `<span class="hit-down">No se pudo pedir más a ${name}: ${esc(err.message)}</span> ` +
-      `<button class="linkbtn" type="button" data-more="${esc(store)}">reintentar</button>`;
-  }
+  const list = chain.querySelector(".hit-products");
+  const next = [...list.querySelectorAll("li[hidden]")].slice(0, PAGE);
+  for (const row of next) row.hidden = false;
+  markCheapest(list);
+  updateMore(chain, store, true);
+  announce(next.length
+    ? next.length + (next.length === 1 ? " resultado más en " : " resultados más en ") + nameOf(store) + "."
+    : "Sin más resultados en " + nameOf(store) + ".");
 }
 
 $("search-form").addEventListener("submit", (event) => {
@@ -393,7 +398,7 @@ $("search-form").addEventListener("submit", (event) => {
 
 $("hits").addEventListener("click", (event) => {
   const more = event.target.closest("[data-more]");
-  if (more) { pageMore(more.dataset.more, more); return; }
+  if (more) { revealMore(more.dataset.more, more); return; }
   const pin = event.target.closest("[data-pin]");
   if (pin) {
     addLine(pin.dataset.pin, pin.dataset.id, pin.dataset.name);

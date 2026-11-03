@@ -114,9 +114,18 @@ Dos correcciones que el catálogo de las tiendas obliga a hacer, y que no son co
 
 - **Cobertura de términos.** Con una consulta de dos palabras, primero los resultados que las
   contienen **todas**, después los que contienen alguna. Para que haya donde elegir se piden
-  tres veces más resultados de los que se muestran. Si una cadena no tiene nada relevante, se
+  tres veces más resultados de los que se muestran (la web pide 30 por cadena, enseña diez y
+  abre el resto sin volver a preguntar). Si una cadena no tiene nada relevante, se
   queda con su propio orden antes que devolver una lista vacía: un enjuague bucal es malo, una
   lista vacía hace creer que la tienda no vende leche.
+- **La marca también es evidencia.** ALDI, LIDL y MAS publican la marca en un campo propio, así
+  que «milsani» o «ifa» no aparecen en el nombre: la cobertura mira nombre **y** marca, y una
+  consulta de marca deja de puntuar cero.
+- **Un solo corte.** Un resultado tiene que cubrir al menos el **60 %** de las palabras de la
+  consulta (`match.Threshold`, el mismo número con el que la cesta evita emparejar el producto
+  equivocado). Los que no llegan se marcan (`matched: false`) y la web **no los muestra**: cada
+  bloque dice cuántos ha dejado fuera, así que el recorte se declara y nunca se resta en
+  silencio. Emparejar el producto equivocado es peor que no enseñar nada.
 - **Sinónimos de catálogo.** La normativa prohíbe llamar «leche» a una bebida vegetal, así que
   «leche de soja» se busca **también** como «bebida de soja». Solo para esa familia
   (soja, avena, arroz, almendra, coco, avellana): una expansión equivocada es peor que una que
@@ -289,7 +298,7 @@ falsas de este README).
 | `carrefour` | Depende de una API de terceros gratuita, con su cuota y su latencia (arranque en frío ~9 s). |
 | `aldi`, `lidl` | Credenciales/parámetros que pueden rotar; fallan con error explícito si eso pasa. |
 | `mas` | Sin €/unidad: no publica tamaño de venta, y el parser que lo deducía del nombre publicaba `0,09 €/L` para una bolsa de basura de 30 litros. Tampoco devuelve `brand` ni `image`; la categoría se pide desde CYC-05 y es la puerta para recuperar el €/unidad con criterio. |
-| `lidl` | Su buscador devuelve resultados sin relación con la consulta incluso para términos que sí vende («leche entera» → chocolate, lacón, enjuague bucal). El ranking los manda al final; la decisión sobre no mostrarlos está pendiente. |
+| `lidl` | Su buscador devuelve resultados sin relación con la consulta incluso para términos que sí vende («leche entera» → chocolate, lacón, enjuague bucal). El ranking los manda al final y el corte del 60 % los oculta: cada bloque dice cuántos ha dejado fuera. |
 | `aldi`, `lidl` | Publican el tamaño de venta como texto (`salesUnit`, `packaging.text`) y hoy no se expone en `size`: es la mejora más barata para ellas. |
 | `carrefour` | Superfudis devolvió `500 basket_comparison_failed` en una llamada y 200 al reintentar; y agotó su cuota de 3/min en la primera prueba real del agregador. El `ean` depende de un tercero intermitente. |
 | `mas` (cesta) | El carrito GraphQL lee, vacía y olvida el id, pero `addProductsToCart` es rechazado para todo SKU (`UNDEFINED: La cantidad solicitada no está disponible`): su canal de venta no expone inventario por GraphQL y la propia tienda añade con un **POST de formulario** a `/checkout/cart/add`. Esa vía exige `form_key` y cookies de sesión: pendiente. |

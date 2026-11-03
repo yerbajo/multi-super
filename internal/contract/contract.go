@@ -33,6 +33,11 @@ type Hit struct {
 	Category  string `json:"category,omitempty"`
 	URL       string `json:"url,omitempty"`
 	Image     string `json:"image,omitempty"`
+	// Matched is the search's verdict on whether this product is what the shopper named:
+	// true when it covers the query, false when it does not. Only the aggregating search
+	// fills it; the chain CLIs never set it, so the key is absent there and nil means "not
+	// judged" — never "does not match".
+	Matched *bool `json:"matched,omitempty"`
 }
 
 // Bool returns a pointer to v: a chain that does know its stock state publishes it here.

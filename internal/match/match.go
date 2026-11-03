@@ -1,12 +1,12 @@
-// Package match decides how much of a search query a product name covers, so search
-// results can be ordered by relevance: names carrying every query word first, then names
-// carrying some, and names carrying none last.
+// Package match decides how much of a search query a product covers, so search results can
+// be ordered by relevance — those carrying every query word first, then those carrying
+// some, then those carrying none — and cut at the one threshold the basket already applies.
 //
 // The normalisation and the tokenisation below are a copy of internal/basket's score.go,
-// on purpose: the basket keeps its own weighting and its own acceptance threshold, and
-// this package is only about ordering results. The two must stay in agreement — a new
-// accent, a new function word or a new rule for splitting a size belongs in both in the
-// same change.
+// on purpose: the basket keeps its own weighting and this package is only about ordering
+// and hiding results. The two must stay in agreement — a new accent, a new function word or
+// a new rule for splitting a size belongs in both in the same change — and the cut itself is
+// shared: Threshold is the number basket.score.go matches at.
 package match
 
 import (
@@ -128,11 +128,25 @@ func containsAnyToken(tokens map[string]bool, words []string) bool {
 	return false
 }
 
-// Coverage is how many of the query's tokens appear in name, and how many tokens the
-// query has. A query of nothing but function words has no tokens, so every candidate
+// Threshold is how much of a query a candidate must cover to be that product: the number
+// internal/basket already matches at (0.6), because matching the wrong product is worse than
+// reporting nothing. One policy, so the search and the basket never disagree about whether a
+// name is what the shopper asked for.
+const Threshold = 0.6
+
+// Coverage is how many of the query's tokens appear in the texts, and how many tokens the
+// query has. The texts are the pieces of evidence the chain publishes: its product name and,
+// on ALDI, LIDL and MAS, the brand in a field of its own — searching a brand scores zero on
+// the name alone. A query of nothing but function words has no tokens, so every candidate
 // covers 0 of 0 and the caller keeps the chain's own order.
-func Coverage(query, name string) (covered, total int) {
-	q, c := Tokens(query), Tokens(name)
+func Coverage(query string, texts ...string) (covered, total int) {
+	q := Tokens(query)
+	c := make(map[string]bool)
+	for _, text := range texts {
+		for tok := range Tokens(text) {
+			c[tok] = true
+		}
+	}
 	for tok := range q {
 		if c[tok] {
 			covered++
@@ -141,14 +155,32 @@ func Coverage(query, name string) (covered, total int) {
 	return covered, len(q)
 }
 
-// Rank returns hits ordered by how much of the query each name covers: full coverage
-// first, then partial by descending coverage, then none. The order is stable, so hits
-// with the same coverage keep the chain's own order — which also means an answer where
-// nothing covers the query comes back untouched. Zero-coverage hits are kept, never
-// dropped: a chain that has nothing relevant is still better asked than emptied.
+// Matches reports whether at least one variant of the query covers Threshold or more of its
+// tokens in the hit's name or brand. A query with no tokens has nothing to judge, so the hit
+// matches and the caller keeps the chain's own order.
+func Matches(variants []string, h contract.Hit) bool {
+	judged := false
+	for _, v := range variants {
+		covered, total := Coverage(v, h.Name, h.Brand)
+		if total == 0 {
+			continue
+		}
+		judged = true
+		if float64(covered)/float64(total) >= Threshold {
+			return true
+		}
+	}
+	return !judged
+}
+
+// Rank returns hits ordered by how much of the query each one covers in its name or brand:
+// full coverage first, then partial by descending coverage, then none. The order is stable,
+// so hits with the same coverage keep the chain's own order — which also means an answer
+// where nothing covers the query comes back untouched. Zero-coverage hits are kept, never
+// dropped here: whether they are shown is Matches' call, and it is declared to the caller.
 func Rank(query string, hits []contract.Hit) []contract.Hit {
-	return rankBy(hits, func(name string) int {
-		covered, _ := Coverage(query, name)
+	return rankBy(hits, func(h contract.Hit) int {
+		covered, _ := Coverage(query, h.Name, h.Brand)
 		return covered
 	})
 }
@@ -157,10 +189,10 @@ func Rank(query string, hits []contract.Hit) []contract.Hit {
 // coverage of any variant, so a name carrying every word of «bebida de soja» outranks one
 // carrying only «soja» from the form the shopper typed.
 func RankVariants(variants []string, hits []contract.Hit) []contract.Hit {
-	return rankBy(hits, func(name string) int {
+	return rankBy(hits, func(h contract.Hit) int {
 		best := 0
 		for _, v := range variants {
-			if covered, _ := Coverage(v, name); covered > best {
+			if covered, _ := Coverage(v, h.Name, h.Brand); covered > best {
 				best = covered
 			}
 		}
@@ -169,14 +201,14 @@ func RankVariants(variants []string, hits []contract.Hit) []contract.Hit {
 }
 
 // rankBy stable-sorts hits by descending relevance without touching the caller's slice.
-func rankBy(hits []contract.Hit, covered func(name string) int) []contract.Hit {
+func rankBy(hits []contract.Hit, covered func(h contract.Hit) int) []contract.Hit {
 	type scored struct {
 		hit     contract.Hit
 		covered int
 	}
 	ranked := make([]scored, len(hits))
 	for i, h := range hits {
-		ranked[i] = scored{hit: h, covered: covered(h.Name)}
+		ranked[i] = scored{hit: h, covered: covered(h)}
 	}
 	sort.SliceStable(ranked, func(i, j int) bool { return ranked[i].covered > ranked[j].covered })
 

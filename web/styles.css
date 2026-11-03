@@ -296,6 +296,9 @@ main{max-width:1160px;margin-inline:auto;padding:var(--sp-6) var(--sp-7) 0;flex:
 .hit-products .pname{font-size:0.84375rem;line-height:1.45;min-width:0;overflow-wrap:anywhere}
 .hit-products .pprice{font-size:0.84375rem;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;justify-self:end;min-width:64px;text-align:end}
 .hit-down{font-size:var(--text-sm);color:var(--ink-2)}
+/* The declared cut at the foot of a block: the rows the query does not describe are hidden,
+   and the line says how many. Quiet, never a warning. */
+.hit-drop{margin-block-start:var(--sp-2);font-size:var(--text-xs);color:var(--ink-3);line-height:1.5}
 /* The cheapest row of a block: the lowest printed price, washed in mint with the accent rule
    on its left. Nothing else on the row changes; the pill lives inside .pname, never in a
    fourth grid column. */

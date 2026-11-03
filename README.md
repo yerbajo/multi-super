@@ -1,13 +1,19 @@
 # multisuper
 
-Seis binarios, uno por cadena de supermercados, que convierten el catálogo de cada tienda en
-**un mismo objeto JSON**.
+**Qué es.** Un comparador de precios de supermercado: buscas un producto una vez y ves qué cuesta
+en las seis cadenas —ALCAMPO, ALDI, CARREFOUR, DIA, LIDL y MAS— con el precio y el catálogo que
+cada una publica en ese momento.
 
-El producto es un agregador con web: se busca un producto, se ve qué cuesta en cada cadena, y
-cada artículo que eliges **entra en la cesta de su supermercado y solo en la suya**. No hay una
-cesta única que las seis intenten cubrir, porque un producto de MAS no es el mismo producto que
-el equivalente de DIA: lo que hay es **una cesta por supermercado con su propio total**. La
-cesta real de la tienda —la que se paga— es el **paso de entrega** de la cadena elegida.
+**Para qué.** Para decidir dónde hacer la compra sin abrir seis webs y sin fiarse de una cifra que
+nadie ha comprobado: cada precio lo publica su cadena, y una cadena que no responde se declara en
+vez de rellenarse.
+
+**Qué no hace.** No junta productos de varias cadenas en una cesta única ni declara «la más
+barata»: un producto de MAS no es el mismo que su equivalente de DIA, así que hay **una cesta por
+supermercado con su propio total**. La cesta real de la tienda —la que se paga— es el **paso de
+entrega** de la cadena elegida.
+
+Seis binarios, uno por cadena, que convierten el catálogo de cada tienda en **un mismo objeto JSON**.
 
 ```
 multisuper find   leche          → qué hay y a qué precio en las seis cadenas

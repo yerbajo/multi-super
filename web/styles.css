@@ -81,7 +81,7 @@ button{font:inherit;color:inherit}
 
 /* ---- brand marks: one <use> per chain, sized here, never a file ---- */
 .sprite{position:absolute;width:0;height:0;overflow:hidden}
-.logo{display:block;height:24px;width:auto;flex:none;font-family:var(--sans)}
+.logo{display:block;height:30px;width:106px;flex:none}
 
 /* Each chain's own colour, used only as a structural rule (a 3px edge), never as a
    surface: the accent green stays the one colour that means "this is on". */
@@ -220,7 +220,7 @@ main{max-width:1160px;margin-inline:auto;padding:var(--sp-6) var(--sp-7) 0;flex:
    and the sentence starts on the card's left edge in all six cards. */
 .shop-body{display:contents}
 .shop-logo{grid-column:1;grid-row:1;display:block;padding-block-start:1px}
-.shop-logo .logo{height:24px;width:72px}
+.shop-logo .logo{height:30px;width:106px}
 .shop-check{grid-column:2;grid-row:1;justify-self:end;display:flex;align-items:center;gap:var(--sp-2);min-height:26px}
 .dist{grid-column:1/-1;grid-row:2;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-3)}
 .cap{grid-column:1/-1;grid-row:3;display:block;font-size:0.84375rem;color:var(--ink-2);line-height:1.5;min-height:3.1em}
@@ -285,6 +285,7 @@ main{max-width:1160px;margin-inline:auto;padding:var(--sp-6) var(--sp-7) 0;flex:
   border-radius:var(--r-2);padding:var(--sp-3) var(--sp-4) var(--sp-3);box-shadow:var(--shadow-1);
 }
 .hit-head{display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;padding-block-end:var(--sp-2);border-block-end:1px solid var(--line)}
+.hit-head .logo{height:22px;width:74px}
 .hit-head [data-count]{margin-inline-start:auto;border-color:transparent;background:var(--surface-2)}
 .hit-products{margin-block-start:var(--sp-1);display:flex;flex-direction:column}
 .hit-products li{
@@ -304,6 +305,20 @@ main{max-width:1160px;margin-inline:auto;padding:var(--sp-6) var(--sp-7) 0;flex:
   margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);border-radius:var(--r-1);
 }
 .hit-products li[data-cheap] .pprice{color:var(--accent)}
+/* The cheapest row of the whole search carries the harder mark: the pine wash and the 2px
+   pine rule speak about the comparison across chains, the mint one about the chain's own
+   list. Only one of the two labels is on a row, so they never stack. */
+.hit-products li[data-cheapest]{
+  background:color-mix(in oklab,var(--accent-deep) 7%,var(--surface));
+  box-shadow:inset 2px 0 0 var(--accent-deep);
+  margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);border-radius:var(--r-1);
+}
+.hit-products li[data-cheapest] .pprice{color:var(--accent-deep);font-weight:800}
+.hit-products .pglobal{
+  display:inline-block;margin-inline-start:var(--sp-2);padding:2px var(--sp-2);
+  border-radius:var(--r-1);background:var(--accent-deep);color:var(--accent-deep-ink);
+  font-size:11px;font-weight:700;line-height:1.4;white-space:nowrap;
+}
 .hit-products .pcheap{
   display:inline-block;margin-inline-start:var(--sp-2);padding:1px var(--sp-2);
   border-radius:var(--r-1);background:var(--surface);color:var(--accent);
@@ -357,7 +372,7 @@ main{max-width:1160px;margin-inline:auto;padding:var(--sp-6) var(--sp-7) 0;flex:
 /* ---- the basket, read per supermarket: one section per chain (S14) ---- */
 .basket-chain{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-2);padding:var(--sp-3)}
 .bc-head{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
-.bc-head .logo{height:20px;width:60px}
+.bc-head .logo{height:22px;width:74px}
 .bc-count{font-size:var(--text-xs);color:var(--ink-2);font-weight:600}
 .bc-sub{margin-inline-start:auto;font-size:1.0625rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
 .bc-lines{margin-block-start:var(--sp-1);display:flex;flex-direction:column}

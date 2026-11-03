@@ -108,6 +108,30 @@ Dentro del bloque de cada cadena, la fila más barata va remarcada con el precio
 propia fila (no con el precio por unidad, que es otra pregunta). Una fila sin precio nunca se
 marca y un bloque con menos de dos precios no se marca: un solo resultado no es «el más barato».
 
+Sobre esas mismas filas va un segundo distintivo, más fuerte: **el más barato de todos**, el
+precio más bajo de la búsqueda entera. Solo aparece cuando al menos dos cadenas respondieron con
+precio —comparar una sola no es comparar— y cuando cae en una fila que ya era la más barata de su
+cadena, la fila lleva una etiqueta, no dos.
+
+### Marcas de las cadenas
+
+Las seis marcas viajan dentro del binario, en un sprite inline: la página no pide ninguna
+imagen. Cada una sale de un vector público, se reproduce sin recolorear, recortar ni deformar,
+y se usa solo para identificar la cadena que se compara. La caja es la misma para las seis
+(106 x 30 px) para que la columna se lea como una familia: la altura óptica se ajusta marca a
+marca y el ancho nunca se fuerza. La caja premia la versión horizontal de cada marca —la palabra
+de ALDI con su subrayado, el lockup de CARREFOUR, la palabra de LIDL— porque a esta altura un
+bloque cuadrado se lee como un icono y no como una marca.
+
+| Cadena | Origen del vector | Licencia del archivo |
+|---|---|---|
+| ALCAMPO | `File:Logo Alcampo.svg`, Wikipedia en francés | marca registrada (uso nominativo) |
+| ALDI | `File:Aldi Logo on the outside of shops.svg`, Wikimedia Commons | dominio público |
+| CARREFOUR | lockup oficial 2024, espejo público en worldvectorlogo | marca registrada (uso nominativo) |
+| DIA | `File:Dia 2019.svg`, Wikimedia Commons | dominio público |
+| LIDL | `File:Lidl-Logo.svg`, Wikimedia Commons (el mismo que sirve lidl.es) | dominio público |
+| MAS | `logo.svg` de supermercadosmas.com | marca registrada (uso nominativo) |
+
 ## Relevancia y vocabulario
 
 Dos correcciones que el catálogo de las tiendas obliga a hacer, y que no son cosmética:

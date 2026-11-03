@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"multisuper/internal/contract"
+	"multisuper/internal/match"
 )
 
 func ptr(f float64) *float64 { return &f }
@@ -151,5 +152,13 @@ func TestCentsRoundsHalfAwayFromZero(t *testing.T) {
 		if got := Cents(tt.price); got != tt.want {
 			t.Errorf("Cents(%v) = %d, want %d", tt.price, got, tt.want)
 		}
+	}
+}
+
+// One policy, not two: the basket cuts at the same number the search hides by, so the two
+// can never disagree about whether a name is the product the shopper named.
+func TestBasketThresholdIsTheSearchesThreshold(t *testing.T) {
+	if matchThreshold != match.Threshold {
+		t.Fatalf("basket matchThreshold = %v, match.Threshold = %v", matchThreshold, match.Threshold)
 	}
 }

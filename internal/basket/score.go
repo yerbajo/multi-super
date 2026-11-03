@@ -7,14 +7,16 @@ import (
 	"unicode"
 
 	"multisuper/internal/contract"
+	"multisuper/internal/match"
 )
 
-// matchThreshold is the documented cut below which a candidate counts as "not found".
-// A candidate that shares one of two query tokens scores 0.5 and is rejected, so
-// «leche entera» is never matched to «Chocolate leche LINDT 100gr»; a candidate that
-// shares every query token scores 1 and is accepted. Matching the wrong product is
-// worse than reporting the item missing, because the total would be a lie.
-const matchThreshold = 0.6
+// matchThreshold is the documented cut below which a candidate counts as "not found". The
+// number is match.Threshold — the search hides by the same cut, so there is one policy and
+// not two. A candidate that shares one of two query tokens scores 0.5 and is rejected, so
+// «leche entera» is never matched to «Chocolate leche LINDT 100gr»; a candidate that shares
+// every query token scores 1 and is accepted. Matching the wrong product is worse than
+// reporting the item missing, because the total would be a lie.
+const matchThreshold = match.Threshold
 
 // score is the matching function, and this is its definition:
 //

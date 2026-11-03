@@ -236,3 +236,80 @@ func TestRankWithASingleWord(t *testing.T) {
 		}
 	}
 }
+
+// ALDI, LIDL and MAS publish the brand in a field of its own, so the name alone scores a
+// brand query zero: Coverage compares the name **and** the brand the chain prints beside it.
+func TestCoverageSeesTheBrandPublishedBesideTheName(t *testing.T) {
+	tests := []struct {
+		query   string
+		texts   []string
+		covered int
+		total   int
+	}{
+		{"milsani", []string{"Leche entera 1 l", "Milsani"}, 1, 1},
+		{"milsani", []string{"Leche entera 1 l"}, 0, 1},
+		{"milsani", []string{"Leche entera 1 l", ""}, 0, 1},
+		{"milsani leche", []string{"Leche entera 1 l", "Milsani"}, 2, 2},
+		// The name alone still means exactly what it meant.
+		{"leche entera", []string{"Leche entera 1 l"}, 2, 2},
+		{"de la", []string{"Leche entera 1 l", "Milsani"}, 0, 0},
+	}
+	for _, tt := range tests {
+		covered, total := Coverage(tt.query, tt.texts...)
+		if covered != tt.covered || total != tt.total {
+			t.Errorf("Coverage(%q, %v) = %d/%d, want %d/%d",
+				tt.query, tt.texts, covered, total, tt.covered, tt.total)
+		}
+	}
+}
+
+// The brand is evidence for the ordering too: a product labelled MILSANSI outranks one that
+// merely shares a word with the query, even though its name never says the brand.
+func TestRankSeesTheBrandPublishedBesideTheName(t *testing.T) {
+	branded := hit("1", "Leche entera 1 l")
+	branded.Brand = "Milsani"
+	hits := []contract.Hit{
+		hit("2", "Chocolate con leche 100 gr"),
+		branded,
+		hit("3", "Milsani batido de chocolate 1 l"),
+	}
+
+	got := names(Rank("milsani", hits))
+	want := []string{"Leche entera 1 l", "Milsani batido de chocolate 1 l", "Chocolate con leche 100 gr"}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("ranked order = %v, want %v", got, want)
+		}
+	}
+}
+
+// Matches is the public cut: at least one variant must cover Threshold or more of its own
+// tokens in the name or the brand, and a query with nothing to cover matches everything.
+func TestMatchesAppliesTheOneThreshold(t *testing.T) {
+	tests := []struct {
+		name     string
+		variants []string
+		hit      contract.Hit
+		want     bool
+	}{
+		{"every word", []string{"leche entera"}, contract.Hit{Name: "Leche entera Dia Láctea pack 6 x 1 L"}, true},
+		{"one of two words", []string{"leche entera"}, contract.Hit{Name: "Chocolate leche LINDT 100gr"}, false},
+		{"junk", []string{"leche entera"}, contract.Hit{Name: "FREEWAY Cola Zero"}, false},
+		{"the brand", []string{"milsani"}, contract.Hit{Name: "Leche entera 1 l", Brand: "Milsani"}, true},
+		{"the catalogue form", []string{"leche de soja", "bebida de soja"}, contract.Hit{Name: "Bebida soja con calcio IFA ELIGES 1l"}, true},
+		{"no query tokens", []string{"de la"}, contract.Hit{Name: "FREEWAY Cola Zero"}, true},
+		{"no variants at all", nil, contract.Hit{Name: "FREEWAY Cola Zero"}, true},
+	}
+	for _, tt := range tests {
+		if got := Matches(tt.variants, tt.hit); got != tt.want {
+			t.Errorf("%s: Matches(%v, %q) = %v, want %v", tt.name, tt.variants, tt.hit.Name, got, tt.want)
+		}
+	}
+}
+
+// The cut is the number the basket already applies: one policy, not two.
+func TestThresholdIsTheBasketsNumber(t *testing.T) {
+	if Threshold != 0.6 {
+		t.Fatalf("Threshold = %v, want the 0.6 the basket matches at", Threshold)
+	}
+}

@@ -556,3 +556,59 @@ func TestRetryableOnlyForQuotaAndTimeout(t *testing.T) {
 		}
 	}
 }
+
+// A hit the query does not describe is declared as such, never dropped: the page hides it
+// and says how many it hid, so the count it shows is never a silent subtraction.
+func TestFindMarksEachHitAsMatchingOrNot(t *testing.T) {
+	s := named("lidl", junkOrder...)
+	res := Find(context.Background(), "leche entera", 10, time.Second, []Chain{{Store: "lidl", Searcher: s}})
+
+	want := map[string]bool{
+		"Leche entera sin lactosa":         true,
+		"Chocolate leche LINDT 100gr":      false, // 1 of 2 tokens
+		"FIN CARRÉ Chocolate":              false,
+		"JOHNSON & JOHNSON Enjuague bucal": false,
+	}
+	for _, h := range res.Results[0].Hits {
+		if h.Matched == nil {
+			t.Fatalf("%q was returned unjudged: every hit the search returns carries the verdict", h.Name)
+		}
+		if *h.Matched != want[h.Name] {
+			t.Errorf("%q matched = %v, want %v", h.Name, *h.Matched, want[h.Name])
+		}
+	}
+}
+
+// The brand a chain publishes in its own field is evidence: a brand query keeps the products
+// that field labels, instead of hiding every one of them.
+func TestFindCountsTheBrandAsEvidence(t *testing.T) {
+	s := &stub{hits: []contract.Hit{
+		{Store: "aldi", ID: "1", Name: "Leche entera 1 l", Brand: "Milsani"},
+		{Store: "aldi", ID: "2", Name: "Batido de chocolate 1 l", Brand: "Milsani"},
+		{Store: "aldi", ID: "3", Name: "Chocolate con leche 100 gr"},
+	}}
+
+	res := Find(context.Background(), "milsani", 10, time.Second, []Chain{{Store: "aldi", Searcher: s}})
+
+	want := map[string]bool{"1": true, "2": true, "3": false}
+	for _, h := range res.Results[0].Hits {
+		if h.Matched == nil {
+			t.Fatalf("%q was returned unjudged", h.Name)
+		}
+		if *h.Matched != want[h.ID] {
+			t.Errorf("%s matched = %v, want %v", h.ID, *h.Matched, want[h.ID])
+		}
+	}
+}
+
+// A query of function words only has nothing to cover, so nothing is judged and the chain's
+// own order stands — the same answer the ranker gives.
+func TestFindJudgesNothingWhenTheQueryHasNoTokens(t *testing.T) {
+	s := named("lidl", "FIN CARRÉ Chocolate")
+	res := Find(context.Background(), "de la", 10, time.Second, []Chain{{Store: "lidl", Searcher: s}})
+
+	h := res.Results[0].Hits[0]
+	if h.Matched == nil || !*h.Matched {
+		t.Fatalf("matched = %v, want true: there are no tokens to judge", h.Matched)
+	}
+}

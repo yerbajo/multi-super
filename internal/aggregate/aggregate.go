@@ -246,10 +246,14 @@ func Find(ctx context.Context, query string, limit int, timeout time.Duration, c
 
 // Search asks one chain for term and, when the catalogue spells it differently, for each
 // variant of it (match.Variants) at the same time. The answers are merged by hit ID keeping
-// the first occurrence, ranked by each name's best coverage of any form — so a name
-// carrying every word of «bebida de soja» outranks one carrying only «soja» from the form
-// the shopper typed — and cut to limit. A chain whose whole answer covers nothing keeps its
-// own order: junk beats an empty answer when the chain has nothing relevant.
+// the first occurrence, ranked by each hit's best coverage of any form — so a name carrying
+// every word of «bebida de soja» outranks one carrying only «soja» from the form the shopper
+// typed — and cut to limit. A chain whose whole answer covers nothing keeps its own order:
+// junk beats an empty answer when the chain has nothing relevant.
+//
+// Every hit leaves with Matched set, judged after the ranking and before the cut, so a caller
+// can hide the rows that are not the product the shopper named instead of dropping them
+// silently. The verdict is the search's, and no chain client sets it.
 //
 // Every query is asked for limit rows: the caller owns the page size, so a caller that
 // paginates (mas search --page) is not disturbed by the expansion.
@@ -270,7 +274,12 @@ func Search(ctx context.Context, c Chain, term string, limit int, timeout time.D
 	if errs[0] != nil {
 		out.Error = Classify(errs[0])
 	} else if merged := merge(answers); merged != nil {
-		out.Hits = cut(match.RankVariants(variants, merged), limit)
+		ranked := match.RankVariants(variants, merged)
+		for i := range ranked {
+			matched := match.Matches(variants, ranked[i])
+			ranked[i].Matched = &matched
+		}
+		out.Hits = cut(ranked, limit)
 		out.Count = len(out.Hits)
 	}
 	return out

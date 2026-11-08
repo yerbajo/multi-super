@@ -57,6 +57,10 @@ se verificó en vivo antes de escribir código.
       el código postal de DIA. Commit `feat(web): …`
 - [x] **T5** README: cadena, endpoint, alcance del precio, límites y lo que no publica.
       Commit `docs(readme): …`
+- [x] **T6** Capturas de `docs/web/` al día: la de las tarjetas ya no puede enseñar seis.
+      Regeneradas contra el servidor vivo con Chrome por CDP (navegar, buscar «leche entera»,
+      fijar una línea por cadena en cadenas que confirman el producto por id, recortar cada
+      sección). Sin script en el repo: es una herramienta de un solo uso. Inline.
 
 ## Entregas
 
@@ -69,6 +73,9 @@ se verificó en vivo antes de escribir código.
 - **E3** `68aa3d0` feat(aggregate): mercadona entra en la tabla de cadenas y en el fan-out
   — T3.
 - **E4** `1f9441d` feat(web): la séptima tarjeta, con la marca oficial de Mercadona — T4.
+- **E7** `4170f73` docs(web): capturas nuevas, con la séptima tarjeta — T6. Regeneradas
+  desde la web viva; la comparación enseña tres cestas de cadenas que confirman el id y no
+  la de CARREFOUR, que cotiza un tercero.
 - **E6** `ec51309` fix(multisuper): la ayuda de --only nombra también mercadona — hallazgo
   posterior a la entrega. `chains()` registraba la cadena pero las dos ayudas llevaban la
   lista escrita a mano: `--only mercadona` funcionaba y no estaba documentado. La lista

@@ -85,6 +85,13 @@ se verificó en vivo antes de escribir código.
   mercadona, ningún recuento de seis, `go test ./...` en verde. La captura de la web sigue
   mostrando seis tarjetas y se deja como pendiente declarado, no como si estuviera al día.
 
+## Publicación
+
+- **PR #13** <https://github.com/yerbajo/multi-super/pull/13> `feat/mercadona-resto` → `main`:
+  710 líneas añadidas, 86 quitadas, 21 ficheros. El PR #12 se había fusionado solo con el
+  primer commit (el paquete), porque los pushes siguientes eran *non-fast-forward* tras el
+  rebase; este PR lleva el resto: CLI, agregador, web, README y capturas.
+
 ## Log
 
 - **L1** (literal) «vamos a incluir mercadona en los supermercados. creo que hay un cli en

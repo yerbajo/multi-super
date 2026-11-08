@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.png" alt="multi-super: la M con la capa, las seis cadenas y el nombre" width="320">
+  <img src="docs/logo.png?raw=true" alt="multi-super: la M con la capa, las seis cadenas y el nombre" width="320">
 </p>
 
 # multisuper
@@ -135,7 +135,7 @@ La página se lee de arriba abajo, en cuatro pasos.
 zona y el interruptor para buscarla. Lo que dejes sin marcar no se consulta, así que no gasta su
 cuota ni aparece en los resultados.
 
-![Las tarjetas de supermercado, con su marca oficial y su interruptor](docs/web/01-supermercados.png)
+![Las tarjetas de supermercado, con su marca oficial y su interruptor](docs/web/01-supermercados.png?raw=true)
 
 **2. Busca un producto.** El mismo término viaja a cada cadena marcada, en el catálogo que
 publica hoy y en su propio orden. Los resultados se leen por cadena, con el número de
@@ -143,23 +143,23 @@ coincidencias; la fila más barata de cada bloque va remarcada, el precio más b
 búsqueda lleva el segundo distintivo, y las filas que no coinciden con tus palabras no se
 muestran: el bloque dice cuántas deja fuera.
 
-![Resultados por cadena, con los dos distintivos y la línea de descartadas](docs/web/02-busqueda.png)
+![Resultados por cadena, con los dos distintivos y la línea de descartadas](docs/web/02-busqueda.png?raw=true)
 
 **3. Añade a la cesta de esa cadena.** El botón de la cesta de una fila añade ese producto a la
 cesta de su supermercado, y a ninguna otra. La cesta tiene una sección por cadena, con sus
 artículos, sus cantidades y su subtotal.
 
-![La cesta, supermercado a supermercado](docs/web/03-cesta.png)
+![La cesta, supermercado a supermercado](docs/web/03-cesta.png?raw=true)
 
 **4. Compara lo que cuesta en cada uno.** Cada fila es la cesta de una cadena: lo que le pediste
 a ella y lo que cobra por ello. No son cestas comparables entre sí, así que aquí no se declara
 ninguna «más barata».
 
-![La comparación, una fila por cadena con su total](docs/web/04-comparacion.png)
+![La comparación, una fila por cadena con su total](docs/web/04-comparacion.png?raw=true)
 
 En el móvil la misma página se apila sin recortes ni controles escondidos:
 
-<img src="docs/web/05-movil.png" alt="La web en el móvil con los resultados de ALCAMPO" width="390">
+<img src="docs/web/05-movil.png?raw=true" alt="La web en el móvil con los resultados de ALCAMPO" width="390">
 
 ### Marcas de las cadenas
 
@@ -192,7 +192,7 @@ papel cálido de la página sin un rectángulo detrás: es el único raster del 
 cadenas siguen identificándose con su marca real en las tarjetas, que es donde se leen.
 
 <p align="center">
-  <img src="web/logo.png" alt="La marca del encabezado: la M con la capa y multi-super, sin la tira de cadenas" width="178">
+  <img src="web/logo.png?raw=true" alt="La marca del encabezado: la M con la capa y multi-super, sin la tira de cadenas" width="178">
 </p>
 
 ## Relevancia y vocabulario

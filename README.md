@@ -165,8 +165,8 @@ En el móvil la misma página se apila sin recortes ni controles escondidos:
 
 Las siete marcas viajan dentro del binario, en un sprite inline: ninguna de ellas es una
 petición. La única imagen que la página carga es `logo.png`, la marca del proyecto, que también
-va embebida en el binario. Cada una sale de un vector público, se reproduce sin recolorear, recortar ni deformar,
-y se usa solo para identificar la cadena que se compara. La caja es la misma para las siete
+va embebida. Cada una sale de un vector público, se reproduce sin recolorear, recortar ni
+deformar, y se usa solo para identificar la cadena que se compara. La caja es la misma para las siete
 (106 x 30 px) para que la columna se lea como una familia: la altura óptica se ajusta marca a
 marca y el ancho nunca se fuerza. La caja premia la versión horizontal de cada marca —la palabra
 de ALDI con su subrayado, el lockup de CARREFOUR, la palabra de LIDL— porque a esta altura un

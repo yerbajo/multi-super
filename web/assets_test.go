@@ -104,8 +104,9 @@ func TestAccessibilityStatics(t *testing.T) {
 	}
 }
 
-// chainKeys reads the six chains out of the one table the front end keeps, so the logo
-// assertions check reality instead of a copy of it that could drift.
+// chainKeys reads the chains out of the one table the front end keeps, and checks it
+// against the capability table the server serves: a chain present in one and missing from
+// the other would render a card with no name or an invisible mark.
 func chainKeys(t *testing.T, js string) []string {
 	t.Helper()
 	start := strings.Index(js, "const CHAIN_NAMES = {")
@@ -121,8 +122,14 @@ func chainKeys(t *testing.T, js string) []string {
 	for _, m := range regexp.MustCompile(`(\w+):\s*"([A-Z]+)"`).FindAllStringSubmatch(block, -1) {
 		keys = append(keys, m[1])
 	}
-	if len(keys) != 6 {
-		t.Fatalf("CHAIN_NAMES lists %d chains, want 6: %v", len(keys), keys)
+	want := capabilities.Stores()
+	if len(keys) != len(want) {
+		t.Fatalf("CHAIN_NAMES lists %d chains, the table serves %d: %v", len(keys), len(want), keys)
+	}
+	for i := range want {
+		if keys[i] != want[i] {
+			t.Fatalf("CHAIN_NAMES = %v, want the table order %v", keys, want)
+		}
 	}
 	return keys
 }
@@ -284,7 +291,7 @@ func TestStoreCardCopyIsNotRepeated(t *testing.T) {
 
 	// The four mode -> chip pairs, and no two modes sharing a chip.
 	want := map[string]string{
-		"warehouse": "Zona del servidor (28041)",
+		"warehouse": "Zona del servidor",
 		"region":    "Precios por región",
 		"pickup":    "Sin precio por tienda",
 		"none":      "Sin zona",

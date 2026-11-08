@@ -69,6 +69,10 @@ se verificó en vivo antes de escribir código.
 - **E3** `68aa3d0` feat(aggregate): mercadona entra en la tabla de cadenas y en el fan-out
   — T3.
 - **E4** `1f9441d` feat(web): la séptima tarjeta, con la marca oficial de Mercadona — T4.
+- **E6** `ec51309` fix(multisuper): la ayuda de --only nombra también mercadona — hallazgo
+  posterior a la entrega. `chains()` registraba la cadena pero las dos ayudas llevaban la
+  lista escrita a mano: `--only mercadona` funcionaba y no estaba documentado. La lista
+  sale ahora de `capabilities.Stores()` y un test compara ayudas, registro y tabla.
 - **E5** `a153480` docs(readme): siete cadenas y la letra pequeña de Mercadona — T5. Delegado a un
   worker con superficies acotadas a `README.md`; revisado por el padre: 14 menciones a
   mercadona, ningún recuento de seis, `go test ./...` en verde. La captura de la web sigue
@@ -87,6 +91,26 @@ se verificó en vivo antes de escribir código.
   responde 200 e incluye `ean`; la búsqueda no lo trae. Un `curl` normal (sin huella TLS
   especial) basta: el fingerprint de navegador que usa `mercadona-cli` no es necesario para
   leer el índice.
+- **L5** Hallazgo del humano el 2026-11-08, con razón: la comprobación diferencial ya
+  enseñaba ese texto (`--only S,... query only these chains: ...`) y se leyó como
+  diferencia esperada en vez de como defecto. La ayuda de `--only` no debe escribirse a
+  mano: sale de la misma tabla que registra las cadenas (E6).
+- **L4** Verificación independiente (gentle-ai-verify, rama `feat/mercadona`), veredicto
+  **se sostiene** en las cuatro afirmaciones:
+  (1) el par `appId`/clave está en el bundle público de la tienda
+  (`/v10116/index-kL_Zoh0P.js`, 5,2 MB, el SPA lo usa tal cual) y la clave no escribe:
+  `DELETE /1/indexes/products_prod_mad1_es/<id>` → `403 Method not allowed with this API
+  key`; `partialUpdateObjectNoCreate` → `400 Not enough rights to update an object`;
+  `GET /1/keys` → `403`;
+  (2) no hay otra credencial, token, cookie ni sesión en el diff, y los fixtures solo
+  llevan miniaturas `imgix` y campos de catálogo;
+  (3) 21 valores de `--wh` (`../`, `?`, `#`, saltos de línea, NUL, mayúsculas, `%2F`) se
+  rechazan sin llegar a la red, y solo un `^[a-z][a-z0-9]{1,11}$` produce petición;
+  (4) ningún precio inventado: `azafrán` sale con precio y **sin** €/unidad porque su
+  `reference_format` es `100 g`, que el contrato no sabe nombrar.
+  Sin verificar, declarado: si la clave permite `addObject` (no se probó: crearía un
+  registro que la propia clave no podría borrar) y el 404 real de un almacén inexistente
+  (solo cubierto por el servidor falso).
 - **L3** Decisión: `ivorpad/mercadona-cli` no se importa (módulo ajeno, `internal/` no es
   importable) y su cliente habla la API privada con token; aquí solo se necesita la lectura
   anónima del índice, que es lo que la búsqueda de esta app hace. Su código de descubrimiento

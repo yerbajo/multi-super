@@ -16,14 +16,19 @@ import (
 	"multisuper/internal/aggregate"
 	"multisuper/internal/alcampo"
 	"multisuper/internal/aldi"
+	"multisuper/internal/capabilities"
 	"multisuper/internal/carrefour"
 	"multisuper/internal/contract"
 	"multisuper/internal/dia"
 	"multisuper/internal/lidl"
 	"multisuper/internal/mas"
+	"multisuper/internal/mercadona"
 )
 
-const usage = `multisuper searches every supermarket chain at once.
+// usageTemplate is the help text before the chain list is filled in: the list itself comes
+// from the capability table, the one place that declares which chains exist, so a chain
+// cannot ship registered but missing from the help.
+const usageTemplate = `multisuper searches every supermarket chain at once.
 
 usage: multisuper find <term> [--limit N] [--timeout D] [--only store1,store2] [--json]
        multisuper basket -f <basket.json|-> [--limit N] [--timeout D] [--only ...] [--json]
@@ -32,7 +37,7 @@ usage: multisuper find <term> [--limit N] [--timeout D] [--only store1,store2] [
 flags:
   --limit N     maximum hits per chain, 1-100 (default 20)
   --timeout D   budget per chain, e.g. 20s (default 20s)
-  --only S,...  query only these chains: alcampo, aldi, carrefour, dia, lidl, mas
+  --only S,...  query only these chains: {chains}
   --json        print the aggregate JSON document instead of a table
 
 The chains are queried in parallel and a failing chain never voids the others: it is
@@ -48,6 +53,14 @@ user can pin a choice by id. See "multisuper basket --help".
 
 exit status: find: 0 at least one chain answered (even with no hits), 1 every chain
              failed, 2 usage error. basket: 1 when no chain covers the whole basket.`
+
+// usage is the find help with the chain list of the table filled in.
+var usage = helpText(usageTemplate)
+
+// helpText fills {chains} with the chains this binary serves, in table order.
+func helpText(template string) string {
+	return strings.ReplaceAll(template, "{chains}", strings.Join(capabilities.Stores(), ", "))
+}
 
 const (
 	defaultLimit   = 20
@@ -85,6 +98,9 @@ func chains() []aggregate.Chain {
 		})},
 		{Store: "mas", Searcher: searchFunc(func(ctx context.Context, term string, limit int) (contract.Result, error) {
 			return mas.New().Search(ctx, term, 1, limit)
+		})},
+		{Store: "mercadona", Searcher: searchFunc(func(ctx context.Context, term string, limit int) (contract.Result, error) {
+			return mercadona.New().Search(ctx, mercadona.DefaultWarehouse, term, limit)
 		})},
 	}
 }

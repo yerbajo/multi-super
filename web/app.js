@@ -16,12 +16,12 @@
 
 const CHAIN_NAMES = {
   alcampo: "ALCAMPO", aldi: "ALDI", carrefour: "CARREFOUR",
-  dia: "DIA", lidl: "LIDL", mas: "MAS",
+  dia: "DIA", lidl: "LIDL", mas: "MAS", mercadona: "MERCADONA",
 };
 // The chip is a function of the zone mode alone, so a card says the mode once instead of
 // writing it again in prose. One mode, one chip, four different texts.
 const MODE_CHIP = {
-  warehouse: "Zona del servidor (28041)",
+  warehouse: "Zona del servidor",
   pickup: "Sin precio por tienda",
   region: "Precios por región",
   none: "Sin zona",
@@ -118,7 +118,7 @@ function zoneShort(zone) {
 
 // S17: the capability table decides who can be asked. A chain that cannot search is never
 // offered a switch, so the page cannot promise a search its API does not do. An empty table
-// (the caps request failed) claims nothing either: the six known chains stay queryable.
+// (the caps request failed) claims nothing either: every known chain stays queryable.
 function canSearch(store) {
   const cap = ((state.caps && state.caps.chains) || []).find((c) => c.store === store);
   return !cap || cap.search !== false;
@@ -131,7 +131,7 @@ function picked() {
 }
 
 // One card, four facts: the mark on the left, the search switch, the price scope, one
-// mechanism sentence and one chip. The mark is the card's left column, so the six cards
+// mechanism sentence and one chip. The mark is the card's left column, so the cards
 // line up on it, and it stays the chain's accessible name (S16).
 function shopCard(cap) {
   const name = nameOf(cap.store);
@@ -170,7 +170,7 @@ function renderShops() {
   const caps = (state.caps && state.caps.chains) || [];
   if (!caps.length) {
     $("picked").textContent = "";
-    note("No se pudo leer qué puede hacer cada cadena, así que no hay tarjetas que marcar. La búsqueda se hará en las seis.", true);
+    note("No se pudo leer qué puede hacer cada cadena, así que no hay tarjetas que marcar. La búsqueda se hará en todas.", true);
     return;
   }
   note("");
@@ -334,7 +334,7 @@ function markCheapest(list) {
 }
 
 // The cheapest row of the whole search is a different claim from the cheapest row of one
-// chain: it puts six catalogues next to each other, so it is made only when at least two
+// chain: it puts several catalogues next to each other, so it is made only when at least two
 // chains answered with a price. It owns the row's label when it lands on a row that is also
 // its chain's cheapest, and leaves that label to the chain when it does not: one row, one
 // word, so the two marks never stack.
@@ -598,7 +598,7 @@ function renderLines() {
     list.innerHTML = '<li class="empty">Todavía no hay líneas. Busca un artículo y añádelo desde la fila de su cadena.</li>';
     return;
   }
-  if (!state.basket) list.innerHTML = '<li class="empty">Comparando tu cesta en las seis cadenas…</li>';
+  if (!state.basket) list.innerHTML = '<li class="empty">Comparando tu cesta en todas las cadenas…</li>';
   for (const chain of sectionsFor()) list.appendChild(chainSection(chain));
   const failed = state.basket ? state.basket.chains.filter((c) => c.error).map(failureOf) : [];
   if (failed.length) {

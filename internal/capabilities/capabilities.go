@@ -74,13 +74,18 @@ var table = []Capability{
 		Zone: Zone{Mode: ModePickup, PriceScoped: false,
 			Label: "recogida en tienda; precio de catálogo nacional"},
 	},
+	{
+		Store: "mercadona", Search: true, Cart: false,
+		Zone: Zone{Mode: ModeWarehouse, PriceScoped: true,
+			Label: "el almacén se elige por código postal y cambia catálogo y precios; por defecto mad1"},
+	},
 }
 
 // All returns the table in chain order. The slice is a copy: a caller may sort or trim
 // it without changing what the next request sees.
 func All() []Capability { return append([]Capability(nil), table...) }
 
-// Get returns one chain's row, and false when the store is not one of the six.
+// Get returns one chain's row, and false when the store is not one of the seven.
 func Get(store string) (Capability, bool) {
 	for _, c := range table {
 		if c.Store == store {
@@ -90,7 +95,7 @@ func Get(store string) (Capability, bool) {
 	return Capability{}, false
 }
 
-// Stores names the six chains in table order, the same order the search and basket
+// Stores names the seven chains in table order, the same order the search and basket
 // documents keep.
 func Stores() []string {
 	out := make([]string, len(table))

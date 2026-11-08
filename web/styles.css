@@ -91,6 +91,7 @@ button{font:inherit;color:inherit}
 [data-chain="dia"]{--chain:#C4121F}
 [data-chain="lidl"]{--chain:#1D5AA8}
 [data-chain="mas"]{--chain:#B3121B}
+[data-chain="mercadona"]{--chain:#009660}
 
 .topbar{
   position:sticky;top:0;z-index:20;
@@ -210,14 +211,14 @@ main{max-width:1160px;margin-inline:auto;padding:var(--sp-6) var(--sp-7) 0;flex:
   border-radius:var(--r-3);box-shadow:var(--shadow-1);
   overflow:hidden;display:flex;flex-direction:column;
 }
-/* The chain's own colour as a 4px rule on top: six cards stay six chains, not six boxes. */
+/* The chain's own colour as a 4px rule on top: each card keeps its own chain, not its own box. */
 .shop::before{content:"";position:absolute;inset-block-start:0;inset-inline:0;height:4px;background:var(--chain,var(--accent))}
 .shop-label{
   display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--sp-2) var(--sp-3);
   align-items:start;padding:var(--sp-5) var(--sp-4) var(--sp-3);cursor:pointer;flex:1;
 }
 /* The body's three facts join the label's own grid, so the switch sits on the mark's line
-   and the sentence starts on the card's left edge in all six cards. */
+   and the sentence starts on the card's left edge in every card. */
 .shop-body{display:contents}
 .shop-logo{grid-column:1;grid-row:1;display:block;padding-block-start:1px}
 .shop-logo .logo{height:30px;width:106px}

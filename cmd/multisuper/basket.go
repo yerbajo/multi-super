@@ -14,7 +14,9 @@ import (
 	"multisuper/internal/basket"
 )
 
-const basketUsage = `multisuper basket prices one shopping basket in every supermarket chain, and
+// basketUsageTemplate is the basket help before the chain list is filled in, for the same
+// reason as usageTemplate: one table declares the chains.
+const basketUsageTemplate = `multisuper basket prices one shopping basket in every supermarket chain, and
 multisuper basket candidates proposes scored products so the user can pin a choice.
 
 usage: multisuper basket -f <basket.json|-> [--limit N] [--timeout D] [--only store1,store2] [--json]
@@ -24,7 +26,7 @@ flags (basket):
   -f PATH       basket JSON file, "-" reads it from stdin (required)
   --limit N     candidates scored per item and chain, 1-100 (default 10)
   --timeout D   budget per chain, e.g. 20s (default 20s)
-  --only S,...  price only these chains: alcampo, aldi, carrefour, dia, lidl, mas
+  --only S,...  price only these chains: {chains}
   --json        print the basket JSON document instead of a table
 
 flags (basket candidates):
@@ -63,6 +65,8 @@ The ranking holds only the chains that cover the whole basket, cheapest first.
 
 exit status: 0 at least one chain covers the whole basket, 1 no chain does (or every
              chain failed), 2 usage error or an invalid basket.`
+
+var basketUsage = helpText(basketUsageTemplate)
 
 // runBasket prices the basket in -f and prints one document or one table, or proposes
 // candidates when the first argument is "candidates".

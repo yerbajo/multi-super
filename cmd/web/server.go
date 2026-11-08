@@ -103,10 +103,10 @@ func (s *server) handler() http.Handler {
 	mux.HandleFunc("POST /api/basket", s.handleBasket)
 	mux.HandleFunc("POST /api/cart/dia", s.handleDIACart)
 	if s.assets != nil {
-		// Only the three embedded paths are served: a catch-all GET would shadow the
-		// 405 that ServeMux answers when /api/search is asked with the wrong verb.
+		// Only the embedded paths are served: a catch-all GET would shadow the 405 that
+		// ServeMux answers when /api/search is asked with the wrong verb.
 		files := http.FileServerFS(s.assets)
-		for _, path := range []string{"/{$}", "/styles.css", "/app.js", "/favicon.svg"} {
+		for _, path := range []string{"/{$}", "/styles.css", "/app.js", "/favicon.svg", "/logo.png"} {
 			mux.Handle("GET "+path, files)
 		}
 	}

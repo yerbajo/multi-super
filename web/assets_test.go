@@ -23,7 +23,10 @@ func read(t *testing.T, name string) string {
 // resolve to one of the four embedded files.
 func TestNoExternalReferences(t *testing.T) {
 	files := []string{"index.html", "styles.css", "app.js"}
-	forbidden := []string{"http://", "https://", "//cdn", "@import", "@font-face", "fonts.googleapis", "url(", "<img", "srcset=", "src=\"//", "href=\"//"}
+	// A local <img> is allowed: the brand mark is one embedded raster, and the reference
+	// check below already refuses any src that is not an embedded file, so a remote image
+	// stays impossible through "http://", "//" and the fs.Stat test.
+	forbidden := []string{"http://", "https://", "//cdn", "@import", "@font-face", "fonts.googleapis", "url(", "srcset=", "src=\"//", "href=\"//"}
 	for _, name := range files {
 		body := read(t, name)
 		for _, bad := range forbidden {
@@ -61,6 +64,30 @@ func TestNoExternalReferences(t *testing.T) {
 		if script == nil || script[1] != "app.js" {
 			t.Errorf("index.html loads a script that is not the local app.js: %v", script)
 		}
+	}
+}
+
+// TestBrandMarkIsOneLocalRaster pins the app's brand mark: the horizontal multisuper logo in
+// the top bar, as the page's only image, loaded from the embedded copy so it is never a fetch
+// to anyone else, and named for a screen reader.
+func TestBrandMarkIsOneLocalRaster(t *testing.T) {
+	html := read(t, "index.html")
+	if !strings.Contains(html, `<img class="brand-mark" src="logo.png" alt="multisuper"`) {
+		t.Fatal("the top bar does not carry the brand mark as a local image with alt text")
+	}
+	if n := strings.Count(html, "<img"); n != 1 {
+		t.Errorf("index.html has %d images, want the one brand mark", n)
+	}
+	fi, err := fs.Stat(Files, "logo.png")
+	if err != nil {
+		t.Fatalf("logo.png is not embedded: %v", err)
+	}
+	if fi.Size() > 120_000 {
+		t.Errorf("the brand mark is %d bytes: the page stays small", fi.Size())
+	}
+	// The wordmark is the image, so the text brand stops being a second, smaller copy of it.
+	if strings.Contains(html, ">\n      multisuper\n") {
+		t.Error("the top bar still prints the word multisuper beside the brand mark")
 	}
 }
 

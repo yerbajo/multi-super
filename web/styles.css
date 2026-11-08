@@ -102,7 +102,9 @@ button{font:inherit;color:inherit}
 }
 .topbar-inner{max-width:1160px;margin-inline:auto;padding:var(--sp-3) var(--sp-7);display:flex;align-items:center;gap:var(--sp-4)}
 .brand{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--text-ui);font-weight:700;letter-spacing:-0.01em}
-.brand svg{display:block;color:var(--accent)}
+/* The brand mark is the one raster the page loads: the wordmark is inside it, so it carries
+   its own size and the top bar prints no second copy of the name. */
+.brand-mark{display:block;height:40px;width:auto}
 .topbar-link{
   margin-inline-start:auto;font-size:var(--text-sm);font-weight:600;color:var(--ink-2);
   text-decoration:none;padding:6px var(--sp-3);border-radius:999px;
@@ -444,6 +446,7 @@ footer p{max-width:92ch}
   .search-row .btn-primary{width:100%}
   .hit-products .pprice{min-width:0}
   .topbar-link{display:none}
+  .brand-mark{height:32px}
 }
 @media (prefers-reduced-motion: no-preference){
   .btn{transition-property:background-color,border-color,box-shadow,scale;transition-duration:150ms;transition-timing-function:ease-out}

@@ -538,6 +538,7 @@ func TestStaticFrontEndIsServed(t *testing.T) {
 		"/":           "Tienda cercana",
 		"/app.js":     "loadCaps",
 		"/styles.css": "--serif",
+		"/logo.png":   "\x89PNG",
 	} {
 		rec := do(t, h, http.MethodGet, path, "")
 		if rec.Code != http.StatusOK {

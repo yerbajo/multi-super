@@ -1,10 +1,10 @@
 # multisuper
 
 **Qué es.** Un comparador de precios de supermercado: buscas un producto una vez y ves qué cuesta
-en las seis cadenas —ALCAMPO, ALDI, CARREFOUR, DIA, LIDL y MAS— con el precio y el catálogo que
-cada una publica en ese momento.
+en las siete cadenas —ALCAMPO, ALDI, CARREFOUR, DIA, LIDL, MAS y MERCADONA— con el precio y el
+catálogo que cada una publica en ese momento.
 
-**Para qué.** Para decidir dónde hacer la compra sin abrir seis webs y sin fiarse de una cifra que
+**Para qué.** Para decidir dónde hacer la compra sin abrir siete webs y sin fiarse de una cifra que
 nadie ha comprobado: cada precio lo publica su cadena, y una cadena que no responde se declara en
 vez de rellenarse.
 
@@ -13,10 +13,10 @@ barata»: un producto de MAS no es el mismo que su equivalente de DIA, así que 
 supermercado con su propio total**. La cesta real de la tienda —la que se paga— es el **paso de
 entrega** de la cadena elegida.
 
-Seis binarios, uno por cadena, que convierten el catálogo de cada tienda en **un mismo objeto JSON**.
+Siete binarios, uno por cadena, que convierten el catálogo de cada tienda en **un mismo objeto JSON**.
 
 ```
-multisuper find   leche          → qué hay y a qué precio en las seis cadenas
+multisuper find   leche          → qué hay y a qué precio en las siete cadenas
 multisuper basket -f cesta.json  → el total de la cesta de cada supermercado
 cmd/web                          → la web: buscar, elegir producto por cadena, ver tu cesta
 <cadena> cart                     → llenar la cesta real de la cadena elegida
@@ -29,18 +29,19 @@ aldi       → aldi.es                        Algolia (search-only), un índice 
 lidl       → lidl.es                        API propia con parámetro `version`
 alcampo    → compraonline.alcampo.es        REST tras AWS WAF
 carrefour  → vía Superfudis (tercero)       API pública del comparador
+mercadona  → tienda.mercadona.es            Algolia (search-only), un índice por almacén
 ```
 
 ## Uso
 
 ```bash
-go build -o bin/ ./cmd/...        # seis binarios
+go build -o bin/ ./cmd/...        # siete binarios
 bin/mas search leche --limit 3 --json
 bin/dia search leche entera        # tabla legible por defecto
 ```
 
 Comando único en todas las cadenas: `search <término> [--limit N] [--json]`.
-`aldi` añade `--region pen|can|bal` y `mas` añade `--page N`.
+`aldi` añade `--region pen|can|bal`, `mas` añade `--page N` y `mercadona` añade `--wh <almacén>`.
 
 ## Cesta virtual
 
@@ -97,16 +98,19 @@ peticiones por minuto y Alcampo cierra la puerta con WAF.
 
 `POST /api/search` acepta `{"term":"leche","limit":10,"stores":["dia","mas"]}`: el cuerpo
 es el del agregador más `stores`, la lista de cadenas que se consultan. Sin `stores` se
-preguntan las seis; con una cadena que este servidor no sirve, `400` en vez de una búsqueda a
+preguntan las siete; con una cadena que este servidor no sirve, `400` en vez de una búsqueda a
 medias. Cada cadena pedida conserva su código de error y una cadena no pedida no gasta nada.
 
 La interfaz expresa el producto tal como es: **las tarjetas de cadena son el selector de la
 búsqueda**. Cada tarjeta lleva su marca a la izquierda, el interruptor para buscarla y una
-frase con lo que esa cadena hace con la zona (solo DIA reprecia; ALDI distingue región; MAS y
-LIDL localizan tienda sin cambiar precio; ALCAMPO y CARREFOUR no permiten fijar nada). Una
-cadena sin marcar **no se consulta**: no gasta su cuota ni aparece en los resultados, porque el
-front manda a `/api/search` solo las marcadas (`stores`). Después, búsqueda con el icono de
-cesta en cada fila: pulsarlo añade ese producto a la cesta de **esa** cadena. La cesta se lee
+frase con lo que esa cadena hace con la zona (solo DIA reprecia; MERCADONA cobra el precio del
+almacén que sirve al código postal; ALDI distingue región; MAS y LIDL localizan tienda sin
+cambiar precio; ALCAMPO y CARREFOUR no permiten fijar nada). El almacén de MERCADONA se elige
+con `--wh`, por defecto `mad1`: catálogo y precios son los de ese almacén, así que la web no
+promete un precio nacional. Una cadena sin marcar **no se consulta**: no gasta su cuota ni
+aparece en los resultados, porque el front manda a `/api/search` solo las marcadas (`stores`).
+Después, búsqueda con el icono de cesta en cada fila: pulsarlo añade ese producto a la cesta de
+**esa** cadena. La cesta se lee
 supermercado a supermercado, con el subtotal de cada uno, y los productos elegidos van marcados
 como tales.
 
@@ -127,7 +131,7 @@ La página se lee de arriba abajo, en cuatro pasos.
 zona y el interruptor para buscarla. Lo que dejes sin marcar no se consulta, así que no gasta su
 cuota ni aparece en los resultados.
 
-![Las seis tarjetas de supermercado, con su marca oficial y su interruptor](docs/web/01-supermercados.png)
+![Las tarjetas de supermercado, con su marca oficial y su interruptor](docs/web/01-supermercados.png)
 
 **2. Busca un producto.** El mismo término viaja a cada cadena marcada, en el catálogo que
 publica hoy y en su propio orden. Los resultados se leen por cadena, con el número de
@@ -155,9 +159,9 @@ En el móvil la misma página se apila sin recortes ni controles escondidos:
 
 ### Marcas de las cadenas
 
-Las seis marcas viajan dentro del binario, en un sprite inline: la página no pide ninguna
+Las siete marcas viajan dentro del binario, en un sprite inline: la página no pide ninguna
 imagen. Cada una sale de un vector público, se reproduce sin recolorear, recortar ni deformar,
-y se usa solo para identificar la cadena que se compara. La caja es la misma para las seis
+y se usa solo para identificar la cadena que se compara. La caja es la misma para las siete
 (106 x 30 px) para que la columna se lea como una familia: la altura óptica se ajusta marca a
 marca y el ancho nunca se fuerza. La caja premia la versión horizontal de cada marca —la palabra
 de ALDI con su subrayado, el lockup de CARREFOUR, la palabra de LIDL— porque a esta altura un
@@ -171,6 +175,7 @@ bloque cuadrado se lee como un icono y no como una marca.
 | DIA | `File:Dia 2019.svg`, Wikimedia Commons | dominio público |
 | LIDL | `File:Lidl-Logo.svg`, Wikimedia Commons (el mismo que sirve lidl.es) | dominio público |
 | MAS | `logo.svg` de supermercadosmas.com | marca registrada (uso nominativo) |
+| MERCADONA | `File:Mercadona.svg`, Wikimedia Commons | CC BY-SA 4.0 (uso nominativo) |
 
 ## Relevancia y vocabulario
 
@@ -182,9 +187,9 @@ Dos correcciones que el catálogo de las tiendas obliga a hacer, y que no son co
   abre el resto sin volver a preguntar). Si una cadena no tiene nada relevante, se
   queda con su propio orden antes que devolver una lista vacía: un enjuague bucal es malo, una
   lista vacía hace creer que la tienda no vende leche.
-- **La marca también es evidencia.** ALDI, LIDL y MAS publican la marca en un campo propio, así
-  que «milsani» o «ifa» no aparecen en el nombre: la cobertura mira nombre **y** marca, y una
-  consulta de marca deja de puntuar cero.
+- **La marca también es evidencia.** ALDI, LIDL, MAS y MERCADONA publican la marca en un campo
+  propio, así que «milsani» o «ifa» no aparecen en el nombre: la cobertura mira nombre **y**
+  marca, y una consulta de marca deja de puntuar cero.
 - **Un solo corte.** Un resultado tiene que cubrir al menos el **60 %** de las palabras de la
   consulta (`match.Threshold`, el mismo número con el que la cesta evita emparejar el producto
   equivocado). Los que no llegan se marcan (`matched: false`) y la web **no los muestra**: cada
@@ -215,7 +220,7 @@ pedido: la cesta se llena y se abandona.
 `mas` tiene el mismo juego de verbos (`mas cart add|get|remove|clear`), pero **solo lee y
 vacía**: la tienda rechaza cualquier `add` (ver límites). Ninguna otra cadena tiene cesta.
 
-**Los códigos de salida son los mismos en los seis binarios:**
+**Los códigos de salida son los mismos en los siete binarios:**
 
 | Código | Significado |
 |---|---|
@@ -231,16 +236,16 @@ El término es **la frase completa**: `dia search leche entera` busca «leche en
 > `go run` no propaga el código de salida (imprime `exit status 2` y sale con 1). Para
 > verificar códigos, construye el binario.
 
-## Una llamada para las seis cadenas
+## Una llamada para las siete cadenas
 
-La web no debe orquestar seis procesos ni leer prosa para saber qué falló:
+La web no debe orquestar siete procesos ni leer prosa para saber qué falló:
 
 ```bash
 multisuper find leche --limit 3 --json
 multisuper find leche --only mas,dia --timeout 5s
 ```
 
-Lanza las seis en paralelo con timeout por cadena y devuelve **siempre resultado parcial**:
+Lanza las siete en paralelo con timeout por cadena y devuelve **siempre resultado parcial**:
 una cadena caída no cancela las demás ni deja la respuesta vacía.
 
 ```json
@@ -310,7 +315,7 @@ siquiera tiene `custom_attributes`, donde Magento guarda los atributos propios�
 emparejamiento entre cadenas tendrá que ser por nombre + `size`, y `size` es texto publicado
 sin normalizar (`"2200 ml"`, no `"2,2 l"`): normalizarlo es trabajo del agregador.
 
-## Las seis cadenas
+## Las siete cadenas
 
 | Cadena | Endpoint | Auth | Rarezas que condicionan el código |
 |---|---|---|---|
@@ -320,6 +325,28 @@ sin normalizar (`"2200 ml"`, no `"2,2 l"`): normalizarlo es trabajo del agregado
 | `lidl` | `GET www.lidl.es/q/api/search?q=&locale=es_ES&assortment=ES&version=2.1.0` | ninguna | Sin el parámetro `version` responde **401**; su valor no se valida. Hay productos cuyo único precio es de socio Lidl Plus: se dejan sin precio y se avisa por stderr. |
 | `alcampo` | `GET compraonline.alcampo.es/api/webproductpagews/v6/product-pages/search` | `x-csrf-token` de la portada | Su GraphQL existe pero el tipo `Product` no lleva nombre ni precio. `/api/*` está tras AWS WAF: pasadas unas peticiones responde `202 challenge` durante minutos. |
 | `carrefour` | `POST supercomparador-i9tw.onrender.com/api/v1/compare-basket` | ninguna | `carrefour.es` responde 403 de Cloudflare en todo el catálogo y en sus APIs (solo `robots.txt` y `favicon.ico` pasan la lista blanca). El precio es **reportado por Superfudis**, no publicado por Carrefour: así se declara en stderr. |
+| `mercadona` | `POST 7uzjkl1dj0-dsn.algolia.net/1/indexes/products_prod_<almacén>_es/query` | credenciales search-only en el bundle | El almacén **es** el índice: catálogo y precios distintos por almacén (`--wh`, por defecto `mad1`), el que sirve al código postal. Un almacén que la tienda no sirve responde 404, no un precio nacional. El índice no publica EAN ni stock: `ean` ausente y `available` desconocido. |
+
+### Mercadona: el índice que su buscador sirve a cualquiera
+
+La tienda no expone una API de búsqueda propia: su buscador consulta un índice **Algolia** de
+solo lectura, uno por almacén y idioma, `products_prod_<almacén>_es`. El `appId` y la clave
+viajan en el bundle de tienda.mercadona.es, que descarga cualquier visitante, así que son
+credenciales públicas de solo búsqueda, como las de ALDI: la lectura anónima del índice no pide
+token, ni cookie, ni huella de navegador, y por eso el paquete no tiene más dependencia que la
+biblioteca estándar. El precio de venta es `unit_price`; el €/unidad, `reference_price` con la
+unidad de `reference_format` (`kg` → kg, `L` → L, otra cosa → sin unidad, nunca convertida a
+ojo); el tamaño es `unit_size` + `size_format` tal como se publican.
+
+Lo que el índice no publica se declara, no se rellena: no trae código de barras ni estado de
+stock. Solo `GET /api/products/<id>/` publica el `ean`, y la búsqueda no paga una petición por
+resultado, así que `ean` queda ausente y `available` queda desconocido; `published` dice que el
+producto está en catálogo, no que haya existencias.
+
+La recuperación ante rotación es la de ALDI: si el almacén regenera su `appId` o su clave, la
+búsqueda falla con un error explícito —nunca con una lista vacía— y el par nuevo se lee del
+bundle de tienda.mercadona.es. Los endpoints y la semántica de `price_instructions` tienen como
+referencia documental `ivorpad/mercadona-cli`; su código no se copia ni se importa.
 
 ## Decisiones y por qué
 
@@ -375,13 +402,14 @@ falsas de este README).
 
 Este repositorio es público, así que conviene tener explícito qué viaja y qué no.
 
-**La única credencial en el código** es el par `appId`/`apiKey` de Algolia de ALDI
-(`internal/aldi/aldi.go`). Son las credenciales **públicas de solo búsqueda** que aldi.es
-sirve en su propio bundle a cualquier visitante: no revelan nada que la web de ALDI no
-dé ya a cada navegador. Lo medido: la búsqueda funciona y una llamada de administración
-sobre el mismo índice (`GET /1/indexes/<índice>/settings`) responde
+**Las credenciales en el código** son dos pares `appId`/`apiKey` de Algolia, el de ALDI
+(`internal/aldi/aldi.go`) y el de MERCADONA (`internal/mercadona/mercadona.go`). Son las
+credenciales **públicas de solo búsqueda** que cada tienda sirve en su propio bundle a
+cualquier visitante: no revelan nada que su web no dé ya a cada navegador. Lo medido en ALDI:
+la búsqueda funciona y una llamada de administración sobre el mismo índice
+(`GET /1/indexes/<índice>/settings`) responde
 `403 «Method not allowed with this API key»` — no puede leer ajustes ni añadir, modificar
-ni borrar registros. El riesgo real no es la exposición sino la **rotación**: cuando ALDI
+ni borrar registros. El riesgo real no es la exposición sino la **rotación**: cuando una cadena
 regenera el bundle, la búsqueda falla con un error explícito hasta que se actualizan las
 dos constantes.
 

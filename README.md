@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.png" alt="multi-super: la M con la capa, las seis cadenas y el nombre" width="320">
+</p>
+
 # multisuper
 
 **Qué es.** Un comparador de precios de supermercado: buscas un producto una vez y ves qué cuesta
@@ -159,8 +163,9 @@ En el móvil la misma página se apila sin recortes ni controles escondidos:
 
 ### Marcas de las cadenas
 
-Las siete marcas viajan dentro del binario, en un sprite inline: la página no pide ninguna
-imagen. Cada una sale de un vector público, se reproduce sin recolorear, recortar ni deformar,
+Las siete marcas viajan dentro del binario, en un sprite inline: ninguna de ellas es una
+petición. La única imagen que la página carga es `logo.png`, la marca del proyecto, que también
+va embebida en el binario. Cada una sale de un vector público, se reproduce sin recolorear, recortar ni deformar,
 y se usa solo para identificar la cadena que se compara. La caja es la misma para las siete
 (106 x 30 px) para que la columna se lea como una familia: la altura óptica se ajusta marca a
 marca y el ancho nunca se fuerza. La caja premia la versión horizontal de cada marca —la palabra
@@ -176,6 +181,19 @@ bloque cuadrado se lee como un icono y no como una marca.
 | LIDL | `File:Lidl-Logo.svg`, Wikimedia Commons (el mismo que sirve lidl.es) | dominio público |
 | MAS | `logo.svg` de supermercadosmas.com | marca registrada (uso nominativo) |
 | MERCADONA | `File:Mercadona.svg`, Wikimedia Commons | CC BY-SA 4.0 (uso nominativo) |
+
+**La marca del proyecto.** `web/logo.png` es la del encabezado y `docs/logo.png` la del README:
+el mismo lockup, la M con la capa y el nombre, pero la del encabezado va **sin la tira de las
+seis cadenas**, porque a 40 px esos chips no eran marcas sino seis manchas de color. Se renderiza
+a 40 px de alto (355 x 80 en el fichero, el arte recortado al hueso) y la del README a 320 px de
+ancho. A las dos se les ha quitado el relleno blanco exterior, así que la marca se apoya en el
+papel cálido de la página sin un rectángulo detrás: es el único raster del front end, y
+`TestBrandMarkIsOneLocalRaster` es lo que impide que aparezca un segundo por descuido. Las
+cadenas siguen identificándose con su marca real en las tarjetas, que es donde se leen.
+
+<p align="center">
+  <img src="web/logo.png" alt="La marca del encabezado: la M con la capa y multi-super, sin la tira de cadenas" width="178">
+</p>
 
 ## Relevancia y vocabulario
 

@@ -1,0 +1,167 @@
+{
+ "hits": [
+  {
+   "score": 48569.0,
+   "id": "51110",
+   "slug": "queso-rallado-mozzarella-pizza-roma-vaca-hacendado-paquete",
+   "brand": "Hacendado",
+   "limit": 999,
+   "badges": {
+    "is_water": false,
+    "requires_age_check": false
+   },
+   "packaging": "Paquete",
+   "published": true,
+   "share_url": "https://tienda.mercadona.es/product/51110/queso-rallado-mozzarella-pizza-roma-vaca-hacendado-paquete",
+   "thumbnail": "https://prod-mercadona.imgix.net/images/0697e560e6a01d260447f0d5aa8ae1a2.jpg?fit=crop&h=300&w=300",
+   "categories": [
+    {
+     "id": 4,
+     "name": "Charcutería y quesos",
+     "level": 0,
+     "order": 159,
+     "categories": [
+      {
+       "id": 56,
+       "name": "Queso lonchas, rallado y en porciones",
+       "level": 1,
+       "order": 159,
+       "categories": [
+        {
+         "id": 312,
+         "name": "Queso rallado",
+         "level": 2,
+         "order": 159
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "display_name": "Queso rallado mozzarella pizza-Roma de vaca Hacendado",
+   "unavailable_from": null,
+   "price_instructions": {
+    "iva": null,
+    "is_new": false,
+    "is_pack": false,
+    "pack_size": null,
+    "unit_name": null,
+    "unit_size": 0.2,
+    "bulk_price": "8.00",
+    "unit_price": "1.60",
+    "approx_size": false,
+    "size_format": "kg",
+    "total_units": null,
+    "unit_selector": true,
+    "bunch_selector": false,
+    "drained_weight": null,
+    "selling_method": 0,
+    "tax_percentage": "4.000",
+    "price_decreased": false,
+    "reference_price": "8.000",
+    "min_bunch_amount": 1.0,
+    "reference_format": "kg",
+    "previous_unit_price": null,
+    "increment_bunch_amount": 1.0
+   },
+   "unavailable_weekdays": [],
+   "status": null,
+   "objectID": "51110"
+  },
+  {
+   "score": 17395.0,
+   "id": "21581",
+   "slug": "queso-rallado-4-quesos-hacendado-paquete",
+   "brand": "Hacendado",
+   "limit": 999,
+   "badges": {
+    "is_water": false,
+    "requires_age_check": false
+   },
+   "packaging": "Paquete",
+   "published": true,
+   "share_url": "https://tienda.mercadona.es/product/21581/queso-rallado-4-quesos-hacendado-paquete",
+   "thumbnail": "https://prod-mercadona.imgix.net/images/9bdb83693cb107ef8e90da30dea2e26e.jpg?fit=crop&h=300&w=300",
+   "categories": [
+    {
+     "id": 4,
+     "name": "Charcutería y quesos",
+     "level": 0,
+     "order": 159,
+     "categories": [
+      {
+       "id": 56,
+       "name": "Queso lonchas, rallado y en porciones",
+       "level": 1,
+       "order": 159,
+       "categories": [
+        {
+         "id": 312,
+         "name": "Queso rallado",
+         "level": 2,
+         "order": 159
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "display_name": "Queso rallado 4 quesos Hacendado",
+   "unavailable_from": null,
+   "price_instructions": {
+    "iva": null,
+    "is_new": false,
+    "is_pack": false,
+    "pack_size": null,
+    "unit_name": null,
+    "unit_size": 0.2,
+    "bulk_price": "8.75",
+    "unit_price": "1.75",
+    "approx_size": false,
+    "size_format": "kg",
+    "total_units": null,
+    "unit_selector": true,
+    "bunch_selector": false,
+    "drained_weight": null,
+    "selling_method": 0,
+    "tax_percentage": "4.000",
+    "price_decreased": false,
+    "reference_price": "8.750",
+    "min_bunch_amount": 1.0,
+    "reference_format": "kg",
+    "previous_unit_price": null,
+    "increment_bunch_amount": 1.0
+   },
+   "unavailable_weekdays": [],
+   "status": null,
+   "objectID": "21581"
+  }
+ ],
+ "nbHits": 28,
+ "page": 0,
+ "nbPages": 14,
+ "hitsPerPage": 2,
+ "exhaustiveNbHits": true,
+ "exhaustiveTypo": true,
+ "exhaustive": {
+  "nbHits": true,
+  "typo": true
+ },
+ "query": "queso rallado",
+ "queryAfterRemoval": "queso rallado",
+ "params": "query=queso+rallado&hitsPerPage=2",
+ "renderingContent": {},
+ "extensions": {
+  "queryCategorization": {}
+ },
+ "processingTimeMS": 3,
+ "processingTimingsMS": {
+  "_request": {
+   "queue": 1,
+   "roundTrip": 44
+  },
+  "extensions": 2,
+  "total": 3
+ },
+ "serverTimeMS": 5
+}

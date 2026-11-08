@@ -116,7 +116,7 @@ func do(t *testing.T, h http.Handler, method, path, body string) *httptest.Respo
 	return rec
 }
 
-// TestCapsEndpoint is the table the store cards are built from: six chains, and only DIA
+// TestCapsEndpoint is the table the store cards are built from: seven chains, and only DIA
 // claims a cart.
 func TestCapsEndpoint(t *testing.T) {
 	srv, _, _, _ := testServer(t)
@@ -131,8 +131,8 @@ func TestCapsEndpoint(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &doc); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if len(doc.Chains) != 6 {
-		t.Fatalf("got %d chains, want 6", len(doc.Chains))
+	if len(doc.Chains) != 7 {
+		t.Fatalf("got %d chains, want 7", len(doc.Chains))
 	}
 	var carts []string
 	for _, c := range doc.Chains {
@@ -209,7 +209,7 @@ func TestSearchOnlyAsksTheSelectedChains(t *testing.T) {
 
 	// The name has to be one this server serves: a typo is the caller's problem, and it must
 	// not become a search in the chains that happen to be left.
-	rec = do(t, h, http.MethodPost, "/api/search", `{"term":"leche","stores":["mercadona"]}`)
+	rec = do(t, h, http.MethodPost, "/api/search", `{"term":"leche","stores":["eroski"]}`)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("unknown store: status %d, want 400: %s", rec.Code, rec.Body)
 	}

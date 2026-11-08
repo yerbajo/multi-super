@@ -249,7 +249,7 @@ func TestBasketRejectsBadInput(t *testing.T) {
 		{"limit zero", "", []string{"-f", "-", "--limit", "0"}, "--limit must be between 1 and 100"},
 		{"limit not a number", "", []string{"-f", "-", "--limit", "muchos"}, "invalid value"},
 		{"zero timeout", "", []string{"-f", "-", "--timeout", "0s"}, "--timeout must be greater than 0"},
-		{"unknown chain", "", []string{"-f", "-", "--only", "mercadona"}, "unknown store"},
+		{"unknown chain", "", []string{"-f", "-", "--only", "eroski"}, "unknown store"},
 		{"stray argument", "", []string{"-f", "-", "leche"}, "unexpected argument"},
 		{"missing file", "", []string{"-f", "/nonexistent/basket.json"}, "no such file"},
 	}

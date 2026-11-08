@@ -35,7 +35,7 @@ func hit(id string, perUnit float64, unit string) contract.Hit {
 	return contract.Hit{Store: "stub", ID: id, Name: "leche " + id, PricePerUnit: perUnit, Unit: unit}
 }
 
-var storeNames = []string{"alcampo", "aldi", "carrefour", "dia", "lidl", "mas"}
+var storeNames = []string{"alcampo", "aldi", "carrefour", "dia", "lidl", "mas", "mercadona"}
 
 // stubChains returns one stub per chain, all answering with the given hits.
 func stubChains(hs []contract.Hit) ([]aggregate.Chain, map[string]*stub) {
@@ -77,7 +77,7 @@ func resultFor(t *testing.T, res aggregate.Result, store string) aggregate.Store
 	return aggregate.StoreResult{}
 }
 
-// All six chains answering: six results, no errors, count is the sum of the hit counts.
+// Every chain answering: one result each, no errors, count is the sum of the hit counts.
 func TestFindAllChainsSucceed(t *testing.T) {
 	all, _ := stubChains([]contract.Hit{hit("1", 1.29, "L")})
 
@@ -88,8 +88,8 @@ func TestFindAllChainsSucceed(t *testing.T) {
 		t.Fatalf("exit = %d, want 0: %s", code, stderr.String())
 	}
 	res := decodeOne(t, stdout.String())
-	if res.Query != "leche" || res.Count != 6 || len(res.Results) != 6 {
-		t.Fatalf("got query=%q count=%d results=%d, want leche/6/6", res.Query, res.Count, len(res.Results))
+	if want := len(storeNames); res.Query != "leche" || res.Count != want || len(res.Results) != want {
+		t.Fatalf("got query=%q count=%d results=%d, want leche/%d/%d", res.Query, res.Count, len(res.Results), want, want)
 	}
 	for _, r := range res.Results {
 		if r.Error != nil || r.Count != 1 {
@@ -108,11 +108,11 @@ func TestFindOneChainFailsAndStillExitsZero(t *testing.T) {
 	code := run([]string{"find", "leche", "--json"}, &stdout, &stderr, all)
 
 	if code != 0 {
-		t.Fatalf("exit = %d, want 0 while four chains answered: %s", code, stderr.String())
+		t.Fatalf("exit = %d, want 0 while the other chains answered: %s", code, stderr.String())
 	}
 	res := decodeOne(t, stdout.String())
-	if res.Count != 4 {
-		t.Errorf("count = %d, want 4", res.Count)
+	if want := len(storeNames) - 2; res.Count != want {
+		t.Errorf("count = %d, want %d (one hit per chain that answered)", res.Count, want)
 	}
 	if r := resultFor(t, res, "dia"); r.Error == nil || r.Error.Code != aggregate.CodeBlocked || r.Error.Status != 403 {
 		t.Errorf("dia = %+v, want a blocked error with status 403", r)
@@ -120,7 +120,7 @@ func TestFindOneChainFailsAndStillExitsZero(t *testing.T) {
 	if r := resultFor(t, res, "carrefour"); r.Error == nil || r.Error.Code != aggregate.CodeQuota || !r.Error.Retryable {
 		t.Errorf("carrefour = %+v, want a retryable quota error", r)
 	}
-	for _, name := range []string{"alcampo", "aldi", "lidl", "mas"} {
+	for _, name := range []string{"alcampo", "aldi", "lidl", "mas", "mercadona"} {
 		if r := resultFor(t, res, name); r.Error != nil || r.Count != 1 {
 			t.Errorf("%s = %+v, want 1 hit and no error", name, r)
 		}
@@ -136,18 +136,18 @@ func TestFindReportsATimedOutChain(t *testing.T) {
 	code := run([]string{"find", "leche", "--timeout", "20ms", "--json"}, &stdout, &stderr, all)
 
 	if code != 0 {
-		t.Fatalf("exit = %d, want 0 while five chains answered: %s", code, stderr.String())
+		t.Fatalf("exit = %d, want 0 while the other chains answered: %s", code, stderr.String())
 	}
 	res := decodeOne(t, stdout.String())
-	if res.Count != 5 {
-		t.Errorf("count = %d, want 5", res.Count)
+	if want := len(storeNames) - 1; res.Count != want {
+		t.Errorf("count = %d, want %d (one hit per chain that answered)", res.Count, want)
 	}
 	if r := resultFor(t, res, "alcampo"); r.Error == nil || r.Error.Code != aggregate.CodeTimeout || !r.Error.Retryable {
 		t.Errorf("alcampo = %+v, want a retryable timeout", r)
 	}
 }
 
-// Every chain failing exits 1 and still prints one document with six error objects.
+// Every chain failing exits 1 and still prints one document with one error per chain.
 func TestFindEveryChainFailingExitsOne(t *testing.T) {
 	all, byName := stubChains(nil)
 	for _, s := range byName {
@@ -164,8 +164,8 @@ func TestFindEveryChainFailingExitsOne(t *testing.T) {
 		t.Fatal("stdout is empty: a total failure is still a result document")
 	}
 	res := decodeOne(t, stdout.String())
-	if len(res.Results) != 6 {
-		t.Fatalf("got %d results, want six error objects", len(res.Results))
+	if len(res.Results) != len(storeNames) {
+		t.Fatalf("got %d results, want one error per chain (%d)", len(res.Results), len(storeNames))
 	}
 	for _, r := range res.Results {
 		if r.Error == nil {
@@ -218,8 +218,8 @@ func TestFindTablePrintsOneRowPerChain(t *testing.T) {
 		t.Fatalf("exit = %d, want 0: %s", code, stderr.String())
 	}
 	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
-	if len(lines) != 7 {
-		t.Fatalf("got %d table lines, want a header plus six rows:\n%s", len(lines), stdout.String())
+	if len(lines) != len(storeNames)+1 {
+		t.Fatalf("got %d table lines, want a header plus one row per chain:\n%s", len(lines), stdout.String())
 	}
 	for _, want := range []string{"STORE", "ESTADO", "HITS", "MEJOR €/UNIDAD", "MS"} {
 		if !strings.Contains(lines[0], want) {
@@ -230,8 +230,8 @@ func TestFindTablePrintsOneRowPerChain(t *testing.T) {
 		t.Errorf("table does not show the failed chain's code:\n%s", stdout.String())
 	}
 	// cheapest €/unit wins, and its unit is printed so kg and L are not confused.
-	if strings.Count(stdout.String(), "1.29 €/L") != 5 {
-		t.Errorf("table does not show the cheapest €/unit for the five chains that answered:\n%s", stdout.String())
+	if got, want := strings.Count(stdout.String(), "1.29 €/L"), len(storeNames)-1; got != want {
+		t.Errorf("table shows the cheapest €/unit %d times, want %d (every chain that answered):\n%s", got, want, stdout.String())
 	}
 }
 
@@ -250,9 +250,9 @@ func TestFindTablePrintsDashWithoutUnitPrice(t *testing.T) {
 			t.Errorf("table invented a €/unit for hits that publish none:\n%s", stdout.String())
 		}
 	}
-	// header + six rows, one "-" per row.
-	if got := strings.Count(stdout.String(), "-"); got != 6 {
-		t.Errorf("table shows %d dashes, want 6 (one per chain):\n%s", got, stdout.String())
+	// one "-" per chain row.
+	if got, want := strings.Count(stdout.String(), "-"), len(storeNames); got != want {
+		t.Errorf("table shows %d dashes, want %d (one per chain):\n%s", got, want, stdout.String())
 	}
 }
 
@@ -270,7 +270,7 @@ func TestFindRejectsBadUsage(t *testing.T) {
 		{"limit not a number", []string{"find", "leche", "--limit", "muchos"}},
 		{"zero timeout", []string{"find", "leche", "--timeout", "0s"}},
 		{"negative timeout", []string{"find", "leche", "--timeout", "-1s"}},
-		{"unknown chain", []string{"find", "leche", "--only", "mercadona"}},
+		{"unknown chain", []string{"find", "leche", "--only", "eroski"}},
 		{"unknown flag", []string{"find", "leche", "--bogus"}},
 	}
 

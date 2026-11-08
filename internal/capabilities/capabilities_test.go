@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-// TestTableIsComplete pins the six chains and their rows: a chain that is not in the
+// TestTableIsComplete pins the seven chains and their rows: a chain that is not in the
 // table can never be offered a zone step, and a row that loses a field would make the
 // web guess instead of reading.
 func TestTableIsComplete(t *testing.T) {
-	want := []string{"alcampo", "aldi", "carrefour", "dia", "lidl", "mas"}
+	want := []string{"alcampo", "aldi", "carrefour", "dia", "lidl", "mas", "mercadona"}
 	got := Stores()
 	if len(got) != len(want) {
 		t.Fatalf("stores: got %d, want %d", len(got), len(want))
@@ -28,7 +28,7 @@ func TestTableIsComplete(t *testing.T) {
 	// Every chain is searchable today, and every row says why its price is scoped or not.
 	for _, c := range All() {
 		if !c.Search {
-			t.Errorf("%s: search is false, all six chains search", c.Store)
+			t.Errorf("%s: search is false, all seven chains search", c.Store)
 		}
 		if !modes[c.Zone.Mode] {
 			t.Errorf("%s: zone mode %q is not one of the four measured modes", c.Store, c.Zone.Mode)
@@ -41,7 +41,7 @@ func TestTableIsComplete(t *testing.T) {
 			t.Errorf("%s: Get does not return the table row", c.Store)
 		}
 	}
-	if _, ok := Get("mercadona"); ok {
+	if _, ok := Get("eroski"); ok {
 		t.Error("Get accepted a store that is not in the table")
 	}
 
@@ -53,7 +53,7 @@ func TestTableIsComplete(t *testing.T) {
 	}
 }
 
-// TestOnlyDIAHasACart keeps the hand-off honest: one working retailer cart, never six.
+// TestOnlyDIAHasACart keeps the hand-off honest: one working retailer cart, never seven.
 func TestOnlyDIAHasACart(t *testing.T) {
 	for _, c := range All() {
 		if c.Cart != (c.Store == "dia") {
@@ -63,10 +63,11 @@ func TestOnlyDIAHasACart(t *testing.T) {
 }
 
 // TestPriceScopeMatchesT29 pins what the investigation measured: DIA changes prices with
-// the warehouse zone and ALDI with the region. MAS, LIDL, ALCAMPO and CARREFOUR do not,
-// and promising them a scoped price would invent one.
+// the warehouse zone, ALDI with the region and MERCADONA with the warehouse that serves
+// the postal code. MAS, LIDL, ALCAMPO and CARREFOUR do not, and promising them a scoped
+// price would invent one.
 func TestPriceScopeMatchesT29(t *testing.T) {
-	scoped := map[string]bool{"dia": true, "aldi": true}
+	scoped := map[string]bool{"dia": true, "aldi": true, "mercadona": true}
 	for _, c := range All() {
 		if c.Zone.PriceScoped != scoped[c.Store] {
 			t.Errorf("%s: price_scoped is %v, T29 measured %v", c.Store, c.Zone.PriceScoped, scoped[c.Store])
@@ -77,6 +78,9 @@ func TestPriceScopeMatchesT29(t *testing.T) {
 	}
 	if got, _ := Get("aldi"); got.Zone.Mode != ModeRegion {
 		t.Errorf("aldi: mode %q, want region", got.Zone.Mode)
+	}
+	if got, _ := Get("mercadona"); got.Zone.Mode != ModeWarehouse {
+		t.Errorf("mercadona: mode %q, want warehouse", got.Zone.Mode)
 	}
 	if got, _ := Get("mas"); got.Zone.Mode != ModePickup {
 		t.Errorf("mas: mode %q, want pickup", got.Zone.Mode)

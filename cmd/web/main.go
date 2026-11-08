@@ -26,6 +26,7 @@ import (
 	"multisuper/internal/dia"
 	"multisuper/internal/lidl"
 	"multisuper/internal/mas"
+	"multisuper/internal/mercadona"
 	"multisuper/web"
 )
 
@@ -57,6 +58,9 @@ func chains() []aggregate.Chain {
 		})},
 		{Store: "mas", Searcher: searchFunc(func(ctx context.Context, term string, limit int) (contract.Result, error) {
 			return mas.New().Search(ctx, term, 1, limit)
+		})},
+		{Store: "mercadona", Searcher: searchFunc(func(ctx context.Context, term string, limit int) (contract.Result, error) {
+			return mercadona.New().Search(ctx, mercadona.DefaultWarehouse, term, limit)
 		})},
 	}
 }

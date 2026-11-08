@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"multisuper/internal/aggregate"
+	"multisuper/internal/capabilities"
 	"multisuper/internal/contract"
 )
 
@@ -329,5 +330,31 @@ func TestTimeoutFlagIsHonoured(t *testing.T) {
 	}
 	if res.Results[0].ElapsedMs < 0 {
 		t.Errorf("elapsedMs is negative: %d", res.Results[0].ElapsedMs)
+	}
+}
+
+// The help is the only place the binary names the chains, so it has to come from the same
+// table that declares them: a chain registered but missing from the help ships
+// undocumented, which is exactly how mercadona shipped.
+func TestHelpNamesEveryRegisteredChain(t *testing.T) {
+	want := capabilities.Stores()
+
+	type help struct{ name, text string }
+	for _, h := range []help{{"find", usage}, {"basket", basketUsage}} {
+		for _, store := range want {
+			if !strings.Contains(h.text, store) {
+				t.Errorf("%s help does not name %q, which the binary serves", h.name, store)
+			}
+		}
+	}
+
+	registered := chains()
+	if len(registered) != len(want) {
+		t.Fatalf("registered %d chains, the table declares %d", len(registered), len(want))
+	}
+	for i := range want {
+		if registered[i].Store != want[i] {
+			t.Fatalf("chain %d is %q, the table says %q", i, registered[i].Store, want[i])
+		}
 	}
 }
